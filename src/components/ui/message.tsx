@@ -39,9 +39,9 @@ export function Wrapper({ message, type, error }: MessageProps) {
         type === "user" && "bg-light-secondary"
       )}
     >
-      {type === "user" ? (
+      {type === "user" && user?.imageUrl ? (
         <Image
-          src={user?.imageUrl}
+          src={user.imageUrl}
           alt="user_image"
           className="rounded-full"
           width={32}
