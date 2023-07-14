@@ -1,6 +1,6 @@
 "use server";
 
-import { Chat, OpenAIMessage, StateMessage } from "~/types/message";
+import { OpenAIMessage, StateMessage } from "~/types/message";
 
 import { zact } from "zact/server";
 import { z } from "zod";
@@ -97,15 +97,3 @@ export const cache = async <T>(
     member: `chat:${id}`,
   });
 };
-
-export async function getChat(id: string, userId: string) {
-  console.log("chat");
-  const chat = await redis.hgetall<Chat>(`chat:${id}`);
-  console.log(chat);
-
-  if (!chat || (userId && chat.userId !== userId)) {
-    return null;
-  }
-
-  return chat;
-}

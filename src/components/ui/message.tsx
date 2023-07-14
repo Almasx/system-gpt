@@ -71,7 +71,7 @@ export function Wrapper({ message, type, error }: MessageProps) {
 
 export interface CalendarMessageProps {
   days: Day[];
-  onSchedule: () => void;
+  onSchedule?: () => void;
   loading?: boolean;
 }
 
@@ -90,14 +90,18 @@ export function CalendarMessage({
           ))}
         </Calendar.Wrapper>
       </div>
-      <p>Everything looks good?</p>
-      <Button
-        className="!bg-black"
-        onClick={() => onSchedule()}
-        loading={loading}
-      >
-        Add to calendar
-      </Button>
+      {onSchedule && (
+        <>
+          <p>Everything looks good?</p>
+          <Button
+            className="!bg-black"
+            onClick={() => onSchedule()}
+            loading={loading}
+          >
+            Add to calendar
+          </Button>
+        </>
+      )}
     </>
   );
 }
