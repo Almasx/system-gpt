@@ -108,6 +108,9 @@ const Form = () => {
     formState: { errors },
   } = useFormContext<Prompt>();
 
+  const actorRef = ChatMachineContext.useActorRef();
+  const [changeInterface, setChangeInterface] = useState(false);
+
   const onSubmit: SubmitHandler<Prompt> = useCallback(
     ({ user, goal, context }) => {
       if (userId) {
@@ -122,11 +125,8 @@ const Form = () => {
         });
       }
     },
-    []
+    [actorRef, userId]
   );
-
-  const actorRef = ChatMachineContext.useActorRef();
-  const [changeInterface, setChangeInterface] = useState(false);
 
   if (changeInterface) {
     return (

@@ -45,7 +45,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
   console.log(chat.messages);
 
   return (
-    <div className="h-screen flex flex-col pt-16 pb-8 items-center">
+    <div className="flex flex-col items-center pt-16 pb-8">
       <main className="max-w-[1024px] rounded-lg overflow-clip border border-gray-light-secondary">
         {...chat.messages.map((message, index) => {
           if (message.role !== "system" && !message.hiddenUI) {

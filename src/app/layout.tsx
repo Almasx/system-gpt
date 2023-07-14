@@ -16,7 +16,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <PlausibleProvider domain="sapar.xyz" />
+        <PlausibleProvider domain="www.sapar.xyz" />
       </head>
       <body className={inter.className}>
         <ClerkProvider>

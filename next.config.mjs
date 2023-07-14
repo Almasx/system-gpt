@@ -4,6 +4,8 @@
  */
 await import("./src/env.mjs");
 
+import { withPlausibleProxy } from "next-plausible";
+
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
@@ -30,4 +32,5 @@ const config = {
     serverActions: true,
   },
 };
-export default config;
+
+export default withPlausibleProxy()(config);
