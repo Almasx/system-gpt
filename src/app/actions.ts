@@ -24,15 +24,35 @@ export const scheduleCalendar = zact(
   return "Done";
 });
 
-export const openaiChat = async (messages: OpenAIMessage[]) => {
+type Models =
+  | "gpt-3.5-turbo-16k"
+  | "gpt-3.5-turbo"
+  | "gpt-3.5-turbo-0613"
+  | "gpt-3.5-turbo-16k-0613"
+  | "gpt-4"
+  | "gpt-4-0613";
+
+export const openaiChat = async (
+  messages: OpenAIMessage[],
+  config?: { model: Models; temperature?: number }
+) => {
+  console.log("action");
   const response = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo-16k",
     messages,
-    presence_penalty: 2,
-    temperature: 1.1,
+    ...(config
+      ? {
+          model: config.model,
+          temperature: config.temperature ?? 1,
+        }
+      : {
+          model: "gpt-3.5-turbo-16k",
+          presence_penalty: 2,
+          temperature: 1.1,
+        }),
   });
 
   const ai_response = response.data?.choices[0].message?.content;
+  console.log(ai_response);
 
   if (!ai_response) {
     throw Error("Internal OpenAI Error");
@@ -44,13 +64,22 @@ export const openaiChat = async (messages: OpenAIMessage[]) => {
 export const openaiFunctions = async (
   messages: OpenAIMessage[],
   functions: any[],
-  function_call: { name: string }
+  function_call: { name: string },
+  config?: { model: Models; temperature?: number }
 ) => {
+  console.log("action");
   const response = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo-0613",
     messages: messages,
     functions,
     function_call,
+    ...(config
+      ? {
+          model: config.model,
+          temperature: config.temperature ?? 1,
+        }
+      : {
+          model: "gpt-3.5-turbo-0613",
+        }),
   });
 
   const ai_response =
@@ -59,6 +88,7 @@ export const openaiFunctions = async (
   if (!ai_response) {
     throw Error("Internal OpenAI Error");
   }
+  console.log(ai_response);
 
   return ai_response;
 };

@@ -11,7 +11,7 @@ html {
 ::-webkit-scrollbar {
   width: 14px;
 }
-.scrollbar-hide::-webkit-scrollbar {
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
 

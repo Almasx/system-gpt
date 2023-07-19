@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
+import { CalendarMessage, Wrapper } from "~/components/atoms/message";
 
 import { auth } from "@clerk/nextjs";
-import { CalendarMessage, Wrapper } from "~/components/ui/message";
 import { redis } from "~/lib/services/redis";
 import { Chat } from "~/types/message";
 

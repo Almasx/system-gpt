@@ -1,4 +1,4 @@
-import { Day } from "~/components/ui/calendar";
+import { Day } from "~/components/molecules/calendar";
 
 export interface OpenAIMessage {
   role: "user" | "assistant" | "system";

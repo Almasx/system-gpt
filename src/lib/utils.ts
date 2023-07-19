@@ -1,7 +1,7 @@
-import { Day, EventUI } from "~/components/ui/calendar";
+import { Day, EventUI } from "~/components/molecules/calendar";
 
 import { customAlphabet } from "nanoid";
-import { convertWorkBlocksUI } from "~/components/ui/calendar";
+import { convertWorkBlocksUI } from "~/components/molecules/calendar";
 import { WorkBlock } from "~/types/work-block";
 
 export const nanoid = customAlphabet(
@@ -103,4 +103,26 @@ export function convertEventsUI(workBlocks: WorkBlock[]): { days: Day[] } {
   return {
     days,
   };
+}
+interface Position {
+  x: number;
+  y: number;
+}
+
+export function calculateSubnodePosition(
+  parentNode: Position,
+  subnodes: number,
+  radius = 450,
+  startAngle = 45
+) {
+  startAngle = startAngle * (Math.PI / 180);
+  const angularSeparation = Math.PI / subnodes;
+  const subnodePositions = [];
+  for (let i = 0; i < subnodes; i++) {
+    const angle = startAngle + i * angularSeparation;
+    const x_subnode = parentNode.x + radius * Math.cos(angle);
+    const y_subnode = parentNode.y + radius * Math.sin(angle);
+    subnodePositions.push({ x: x_subnode, y: y_subnode });
+  }
+  return subnodePositions;
 }

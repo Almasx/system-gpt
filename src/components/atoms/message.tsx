@@ -1,11 +1,11 @@
 "use client";
 
-import { Calendar, Day } from "./calendar";
+import { Calendar, Day } from "../molecules/calendar";
 
 import { useUser } from "@clerk/nextjs";
 import clsx from "clsx";
 import Image from "next/image";
-import Button from "./button";
+import Button from "~/core/ui/button";
 
 export type MessageProps = {
   type: "user" | "assistant";

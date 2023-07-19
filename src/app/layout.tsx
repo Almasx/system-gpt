@@ -3,7 +3,6 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import Script from "next/script";
-import { ChatProvider } from "~/components/providers/ChatProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,10 +20,10 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         src="https://plausible.io/js/script.js"
       />
       <body className={inter.className}>
-        <ClerkProvider>
-          <ChatProvider>{props.children}</ChatProvider>
-        </ClerkProvider>
+        <ClerkProvider>{props.children}</ClerkProvider>
       </body>
     </html>
   );
 }
+
+// Might break because no context

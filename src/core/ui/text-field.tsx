@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { forwardRef } from "react";
-import type { IField } from "~/types/ui";
+import type { IField } from "~/core/ui/types";
 
 export type ITextFieldProps<T> = {
   className?: string;

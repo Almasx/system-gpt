@@ -7,11 +7,7 @@ import {
 } from "~/app/actions";
 import { OpenAIMessage, StateMessage } from "~/types/message";
 import { WorkBlock, workBlocksSchema } from "~/types/work-block";
-import {
-  ai_create_schedule,
-  coach_message,
-  system_message,
-} from "../constants/prompts";
+import { ai_create_schedule, coach_message, system_message } from "../prompts";
 import { convertEventsUI, nanoid } from "../utils";
 
 import { createActorContext } from "@xstate/react";
@@ -115,6 +111,7 @@ const chatService = {
 };
 
 export const chatMachine = createMachine<Context, Event>({
+  predictableActionArguments: true,
   id: "chat",
   type: "parallel",
   context: {

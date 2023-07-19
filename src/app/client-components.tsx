@@ -15,9 +15,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
 import { z } from "zod";
 import Chat from "~/components/Chat";
-import { Spinner } from "~/components/ui/spinner";
-import TextAreaField from "~/components/ui/text-area";
-import TextField from "~/components/ui/text-field";
+import { Spinner } from "~/core/ui/spinner";
+import TextAreaField from "~/core/ui/text-area";
+import TextField from "~/core/ui/text-field";
 import { ChatMachineContext } from "~/lib/machines/chatMachine";
 
 export default function SystemGenerator({
