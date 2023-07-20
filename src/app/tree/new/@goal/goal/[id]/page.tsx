@@ -1,7 +1,8 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Skeleton } from "~/core/ui/skeleton";
 import { selectGoalById, useTreeStore } from "~/lib/hooks/useTree";
 
 export default function Goal({ params }: { params: { id: string } }) {
@@ -21,24 +22,43 @@ export default function Goal({ params }: { params: { id: string } }) {
         <p className="mb-3 text-xl font-medium text-neutral-400">
           {goal.description}
         </p>
-        <div className="flex gap-2 mb-8">
-          <div className="p-1 text-xs uppercase bg-indigo-200 border border-indigo-500 rounded-md ">
-            priority: {goal.meta.score.priority}
+
+        {goal.status === "calculateScore" ? (
+          <div className="flex gap-2 mb-8">
+            <div className="p-1 text-xs uppercase bg-indigo-200 border border-indigo-500 rounded-md ">
+              priority: {goal.meta.score!.priority}
+            </div>
+            <div className="p-1 text-xs uppercase bg-green-200 border border-green-500 rounded-md">
+              relevance: {goal.meta.score!.relevance}
+            </div>
+            <div className="p-1 text-xs uppercase bg-yellow-200 border border-yellow-500 rounded-md">
+              complexity: {goal.meta.score!.complexity}
+            </div>
           </div>
-          <div className="p-1 text-xs uppercase bg-green-200 border border-green-500 rounded-md">
-            relevance: {goal.meta.score.relevance}
+        ) : (
+          <div className="flex gap-2 mb-8">
+            {Array(3)
+              .fill(undefined)
+              .map((_, index) => (
+                <Skeleton
+                  className="w-[100px] h-[20px] rounded-full bg-neutral-300"
+                  key={`badge-${index}`}
+                />
+              ))}
           </div>
-          <div className="p-1 text-xs uppercase bg-yellow-200 border border-yellow-500 rounded-md">
-            complexity: {goal.meta.score.complexity}
-          </div>
-        </div>
+        )}
 
         <section>
           <header className="mb-3 text-2xl italic text-neutral-400">
             Context
           </header>
           <p className="p-4 text-base break-words whitespace-pre-line bg-white border rounded-xl border-gray-light-secondary">
-            {goal.meta.context}
+            {goal.status === "messageEnrich" ? (
+              goal.meta.context
+            ) : (
+              // eslint-disable-next-line react/jsx-no-undef
+              <Loader2 className="m-auto h-7 w-7 animate-spin text-neutral-300" />
+            )}
           </p>
         </section>
       </aside>

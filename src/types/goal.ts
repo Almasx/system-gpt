@@ -6,7 +6,7 @@ export interface Goal {
   description: string;
   importance: string;
   keywords: string[];
-  potential_hurdles: string[];
+  obstacles: string[];
   meta: {
     score: Score;
     // resources: Array<Resource>;
@@ -14,6 +14,24 @@ export interface Goal {
   };
   children: Array<Goal>;
   position: { x: number; y: number };
+  depth: number;
+}
+
+export interface PartialGoal {
+  id: string;
+  topic: string;
+  description: string;
+  importance: string;
+  keywords: string[];
+  obstacles: string[];
+  meta: {
+    score?: Score;
+    // resources: Array<Resource>;
+    context?: string;
+  };
+  children: Array<Goal>;
+  position: { x: number; y: number };
+  depth: number;
 }
 
 export interface Score {
@@ -37,7 +55,7 @@ export const subgoalSchema = z.object({
       sub_goal_content: z.string(),
       importance: z.string(),
       keywords: z.array(z.string()),
-      potential_hurdles: z.array(z.string()),
+      obstacles: z.array(z.string()),
     })
   ),
 });
@@ -69,7 +87,7 @@ export const subgoalSchema = z.object({
 //           type: "string",
 //         },
 //       },
-//       potential_hurdles: {
+//       obstacles: {
 //         type: "array",
 //         description:
 //           "Potential obstacles or hurdles identified in the goal text. non empty",
@@ -83,7 +101,7 @@ export const subgoalSchema = z.object({
 //       "description",
 //       "importance",
 //       "keywords",
-//       "potential_hurdles",
+//       "obstacles",
 //     ],
 //   },
 //   description:

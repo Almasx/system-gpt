@@ -1,8 +1,9 @@
 import { assign, createMachine } from "xstate";
-import { Goal, Score } from "~/types/goal";
+import { openaiChat, openaiFunctions } from "~/app/actions";
+import { PartialGoal, Score, scoreShema, subgoalSchema } from "~/types/goal";
+import { generate_subgoals, score_goal, system_prompts } from "../constants";
+import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
 import { calculateSubnodePosition, nanoid } from "../utils";
-
-import { rootGoal } from "~/app/tree/new/page";
 
 // export interface Resource {
 //   title: string;
@@ -22,7 +23,13 @@ export type Context<T extends Record<any, any>> = {
   [K in keyof T]: T[K] extends Record<any, any> ? Context<T[K]> : T[K] | null;
 };
 
-export const goalMachine = createMachine<Context<Goal>, Events>(
+export const goalMachine = createMachine<
+  Context<PartialGoal> & {
+    update: null | UpdateGoal;
+    statusUpdate: null | UpdateGoalStatus;
+  },
+  Events
+>(
   {
     predictableActionArguments: true,
     id: "goal",
@@ -35,15 +42,15 @@ export const goalMachine = createMachine<Context<Goal>, Events>(
       importance: null,
 
       keywords: [],
-      potential_hurdles: [],
+      obstacles: [],
+      depth: 0,
+
+      update: null,
+      statusUpdate: null,
 
       meta: {
         context: null,
-        score: {
-          priority: null,
-          complexity: null,
-          relevance: null,
-        },
+        score: null,
       },
       children: [],
       position: {
@@ -53,6 +60,13 @@ export const goalMachine = createMachine<Context<Goal>, Events>(
     },
     states: {
       messageEnrich: {
+        entry: (context) => {
+          context.statusUpdate?.call(
+            context.update,
+            context.id!,
+            "messageEnrich"
+          );
+        },
         invoke: {
           src: "messageEnrichService",
           onDone: {
@@ -76,15 +90,28 @@ export const goalMachine = createMachine<Context<Goal>, Events>(
       //   },
       // },
       calculateScore: {
+        entry: (context) => {
+          context.statusUpdate?.call(
+            context.update,
+            context.id!,
+            "calculateScore"
+          );
+        },
         invoke: {
           src: "calculateScoreService",
           onDone: {
             target: "generateSubgoals",
             actions: assign({
-              meta: (context, event) => ({
-                ...context.meta,
-                score: event.data,
-              }),
+              meta: (context, event) => {
+                context.update?.call(context.update, context.id!, {
+                  score: event.data as Score,
+                });
+
+                return {
+                  ...context.meta,
+                  score: event.data,
+                };
+              },
             }),
           },
         },
@@ -99,16 +126,28 @@ export const goalMachine = createMachine<Context<Goal>, Events>(
       //   },
       // },
       generateSubgoals: {
+        entry: (context) => {
+          context.statusUpdate?.call(
+            context.update,
+            context.id!,
+            "generateSubgoals"
+          );
+        },
         invoke: {
           src: "generateSubgoalsService",
           onDone: {
-            actions: [assign({ children: (_, event) => event.data })],
+            actions: [
+              assign({ children: (_, event) => event.data }),
+              (context) =>
+                context.statusUpdate?.call(context.update, context.id!, "done"),
+            ],
             target: "done",
           },
         },
       },
       done: {
         type: "final",
+
         data: (context, event) => ({
           goal: context,
         }),
@@ -124,7 +163,7 @@ export const goalMachine = createMachine<Context<Goal>, Events>(
         Keywords: ${context.keywords?.join(", ")}
         
         Potential Hurdles:
-        ${context.potential_hurdles
+        ${context.obstacles
           ?.map((hurdle, index) => `${index + 1}. ${hurdle}`)
           .join("\n")}
         
@@ -137,107 +176,117 @@ export const goalMachine = createMachine<Context<Goal>, Events>(
         Good luck with your journey in learning ${context.topic}!
         `;
 
-        // const enrichedMessage = await openaiChat(
-        //   [
-        //     { role: "system", content: system_prompts.message_enrich.message },
-        //     { role: "user", content },
-        //   ],
-        //   system_prompts.message_enrich
-        // );
-
-        await new Promise((resolve, reject) =>
-          setTimeout(() => resolve(0), 2000)
+        const enrichedMessage = await openaiChat(
+          [
+            { role: "system", content: system_prompts.message_enrich.message },
+            { role: "user", content },
+          ],
+          system_prompts.message_enrich
         );
 
-        return "enrichedMessage";
+        context.update?.call(context.update, context.id!, {
+          context: enrichedMessage,
+        });
+
+        // await new Promise((resolve, reject) =>
+        //   setTimeout(() => resolve(0), 2000)
+        // );
+
+        return enrichedMessage;
       },
 
       calculateScoreService: async (context): Promise<Score> => {
-        // const scoreRaw = await openaiFunctions(
-        //   [
-        //     { role: "system", content: system_prompts.message_enrich.message },
-        //     {
-        //       role: "user",
-        //       content:
-        //         "Calculate the score for the goal: " + context.meta?.context,
-        //     },
-        //   ],
-        //   [score_goal],
-        //   { name: score_goal.name },
-        //   system_prompts.message_enrich
-        // );
-
-        // const score = scoreShema.parse(JSON.parse(scoreRaw));
-
-        await new Promise((resolve, reject) =>
-          setTimeout(() => resolve(0), 2000)
+        const scoreRaw = await openaiFunctions(
+          [
+            { role: "system", content: system_prompts.message_enrich.message },
+            {
+              role: "user",
+              content:
+                "Calculate the score for the goal: " + context.meta?.context,
+            },
+          ],
+          [score_goal],
+          { name: score_goal.name },
+          system_prompts.message_enrich
         );
-        return { priority: 1, complexity: 2, relevance: 3 };
-        // return score.goal;
+
+        const score = scoreShema.parse(JSON.parse(scoreRaw));
+
+        // await new Promise((resolve, reject) =>
+        //   setTimeout(() => resolve(0), 2000)
+        // );
+        // console.log(context.update)
+        context.update?.call(context.update, context.id!, {
+          score: score.goal, // { priority: 1, complexity: 2, relevance: 3 },
+        });
+        // return { priority: 1, complexity: 2, relevance: 3 };
+        return score.goal;
       },
 
-      generateSubgoalsService: async (context): Promise<Goal[]> => {
+      generateSubgoalsService: async (context): Promise<PartialGoal[]> => {
         const prompt = `Context: ${context.meta.context}
         Score: 
         ${(JSON.stringify(context.meta.score), null, "\t")}`;
 
         console.log(prompt);
-        // const subgoalsRaw = await openaiFunctions(
-        //   [
-        //     {
-        //       role: "system",
-        //       content: system_prompts.generate_subgoals.message,
-        //     },
-        //     {
-        //       role: "user",
-        //       content: prompt,
-        //     },
-        //   ],
-        //   [generate_subgoals],
-        //   { name: generate_subgoals.name },
-        //   system_prompts.generate_subgoals
-        // );
+        const subgoalsRaw = await openaiFunctions(
+          [
+            {
+              role: "system",
+              content: system_prompts.generate_subgoals.message,
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          [generate_subgoals],
+          { name: generate_subgoals.name },
+          system_prompts.generate_subgoals
+        );
 
-        // const { subgoals } = subgoalSchema.parse(JSON.parse(subgoalsRaw));
+        const { subgoals } = subgoalSchema.parse(JSON.parse(subgoalsRaw));
 
         //         const childPosition = calculateSubnodePosition(
         //   context.position as any,
         //   2
         // );
 
-        await new Promise((resolve, reject) =>
-          setTimeout(() => resolve(0), 2000)
-        );
+        // await new Promise((resolve, reject) =>
+        //   setTimeout(() => resolve(0), 2000)
+        // );
 
         const childPosition = calculateSubnodePosition(
           context.position as any,
-          2
+          subgoals.length
         );
 
-        return Array(2)
-          .fill("")
-          .map((_, index) => ({
-            ...rootGoal,
-            id: nanoid(),
-            position: childPosition[index],
-          }));
+        // return Array(2)
+        //   .fill("")
+        //   .map((_, index) => ({
+        //     ...rootGoal,
+        //     id: nanoid(),
+        //     position: childPosition[index],
+        //     meta: {},
+        //   }));
 
-        // return subgoals.map((subgoal, index) => ({
-        //   ...subgoal,
-        //   topic: subgoal.sub_goal,
-        //   description: subgoal.sub_goal_content,
-        //   meta: {
-        //     context: "",
-        //     score: {
-        //       complexity: 0,
-        //       relevance: 0,
-        //       priority: 0,
-        //     },
-        //   },
-        //   children: [],
-        //   id: nanoid(),
-        //   position: childPosition[index],
-        // }));
+        return subgoals.map((subgoal, index) => ({
+          ...subgoal,
+          topic: subgoal.sub_goal,
+          description: subgoal.sub_goal_content,
+          meta: {
+            context: "",
+            score: {
+              complexity: 0,
+              relevance: 0,
+              priority: 0,
+            },
+          },
+          children: [],
+          id: nanoid(),
+          depth: context.depth! + 1,
+          position: childPosition[index],
+        }));
       },
     },
   }

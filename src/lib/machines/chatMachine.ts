@@ -7,7 +7,11 @@ import {
 } from "~/app/actions";
 import { OpenAIMessage, StateMessage } from "~/types/message";
 import { WorkBlock, workBlocksSchema } from "~/types/work-block";
-import { ai_create_schedule, coach_message, system_message } from "../prompts";
+import {
+  ai_create_schedule,
+  coach_message,
+  system_message,
+} from "../constants";
 import { convertEventsUI, nanoid } from "../utils";
 
 import { createActorContext } from "@xstate/react";

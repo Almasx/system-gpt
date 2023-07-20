@@ -14,7 +14,7 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
 import { z } from "zod";
-import Chat from "~/components/Chat";
+import Chat from "~/components/chat";
 import { Spinner } from "~/core/ui/spinner";
 import TextAreaField from "~/core/ui/text-area";
 import TextField from "~/core/ui/text-field";

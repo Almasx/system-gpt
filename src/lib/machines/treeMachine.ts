@@ -1,21 +1,26 @@
 import { assign, createMachine } from "xstate";
-import { goalMachine } from "./goalMachine";
+import { Goal, PartialGoal } from "~/types/goal";
+import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
 
 import { createActorContext } from "@xstate/react";
-import { Goal } from "~/types/goal";
+import { goalMachine } from "./goalMachine";
 
 interface TreeContext {
-  stack: Array<Goal>;
+  stack: Array<PartialGoal | Goal>;
   // resources: Array<Resource>;
   onGenerate: null | ((goal: Goal) => void);
+  onUpdate: UpdateGoal | null;
+  onStatusUpdate: UpdateGoalStatus | null;
 }
 
 type TreeEvent =
   | {
       type: "START";
-      goal: Goal;
+      goal: PartialGoal;
       onGenerate: (goal: Goal) => void;
-      onRoot: (goal: Goal) => void;
+      onRoot: (goal: PartialGoal) => void;
+      onStatusUpdate: UpdateGoalStatus;
+      onUpdate: UpdateGoal;
     }
   | { type: "SUBGOALS_GENERATED"; goal: Goal }
   | { type: "INTERRUPT" };
@@ -26,6 +31,8 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
   context: {
     stack: [],
     onGenerate: null,
+    onUpdate: null,
+    onStatusUpdate: null,
   },
   states: {
     idle: {
@@ -36,6 +43,8 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
             event.onRoot(event.goal);
             return {
               onGenerate: event.onGenerate,
+              onUpdate: event.onUpdate,
+              onStatusUpdate: event.onStatusUpdate,
               stack: [event.goal],
             };
           }),
@@ -56,7 +65,11 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
       invoke: {
         id: "goalMachine",
         src: goalMachine,
-        data: (context) => ({ ...context.stack.shift() }),
+        data: (context) => ({
+          update: context.onUpdate,
+          statusUpdate: context.onStatusUpdate,
+          ...context.stack.shift(),
+        }),
         onDone: {
           target: "checkStack",
           actions: assign((context, event) => {

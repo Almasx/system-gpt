@@ -1,8 +1,8 @@
-import { Day, EventUI } from "~/components/molecules/calendar";
+import { Day, EventUI } from "~/components/calendar";
 
-import { customAlphabet } from "nanoid";
-import { convertWorkBlocksUI } from "~/components/molecules/calendar";
 import { WorkBlock } from "~/types/work-block";
+import { convertWorkBlocksUI } from "~/components/calendar";
+import { customAlphabet } from "nanoid";
 
 export const nanoid = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",

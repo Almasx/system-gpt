@@ -18,10 +18,10 @@ import { inspect } from "@xstate/inspect";
 import clsx from "clsx";
 import { useParams } from "next/navigation";
 import { useCallback } from "react";
-import GoalNode from "~/components/molecules/goal-node";
+import GoalNode from "~/components/goal-node";
 import { useTreeStore } from "~/lib/hooks/useTree";
 import { TreeMachineContext } from "~/lib/machines/treeMachine";
-import { Goal } from "~/types/goal";
+import { Goal, PartialGoal } from "~/types/goal";
 
 export const rootGoal = {
   topic: "Learn digital marketing",
@@ -30,24 +30,18 @@ export const rootGoal = {
   id: "1",
   importance: "High",
   keywords: ["digital marketing", "online marketing", "internet advertising"],
-  potential_hurdles: [
+  obstacles: [
     "Understanding various digital marketing channels",
     "Implementing effective digital marketing strategies",
     "Measuring the success of digital marketing campaigns",
   ],
-  meta: {
-    context: ``,
-    score: {
-      priority: 0,
-      relevance: 0,
-      complexity: 0,
-    },
-  },
+  meta: {},
   children: [],
   position: {
     x: 500,
     y: 500,
   },
+  depth: 0,
 };
 
 const initialNodes: Node[] = [];
@@ -68,7 +62,11 @@ export default function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { send } = TreeMachineContext.useActorRef();
-  const addGoal = useTreeStore((state) => state.addGoal);
+  const { addGoal, updateGoal, updateGoalStatus } = useTreeStore((state) => ({
+    addGoal: state.addGoal,
+    updateGoal: state.updateGoal,
+    updateGoalStatus: state.updateGoalStatus,
+  }));
   const { id } = useParams();
 
   const onGenerate = useCallback(
@@ -116,7 +114,7 @@ export default function App() {
           send({
             type: "START",
             goal: rootGoal,
-            onRoot: (goal: Goal) => {
+            onRoot: (goal: PartialGoal) => {
               let node: Node = {
                 id: goal.id,
                 data: {
@@ -131,6 +129,8 @@ export default function App() {
               addGoal(goal);
             },
             onGenerate,
+            onUpdate: updateGoal,
+            onStatusUpdate: updateGoalStatus,
           })
         }
       >

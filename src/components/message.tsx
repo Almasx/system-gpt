@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Day } from "../molecules/calendar";
+import { Calendar, Day } from "./calendar";
 
 import { useUser } from "@clerk/nextjs";
 import clsx from "clsx";

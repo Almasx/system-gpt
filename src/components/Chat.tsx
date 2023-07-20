@@ -1,7 +1,7 @@
 import { useState } from "react";
 import TextAreaField from "../core/ui/text-area";
 import { ChatMachineContext } from "../lib/machines/chatMachine";
-import { Message } from "./atoms/message";
+import { Message } from "./message";
 
 const Chat = () => {
   return (

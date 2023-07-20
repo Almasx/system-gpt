@@ -154,6 +154,8 @@ export const generate_subgoals = {
     properties: {
       subgoals: {
         type: "array",
+        description:
+          "List of subgoals generated from the main goal, context. Length depend on NUMBER_OF_SUBGOALS",
         items: {
           type: "object",
           properties: {
@@ -174,15 +176,15 @@ export const generate_subgoals = {
             keywords: {
               type: "array",
               description:
-                "Related keywords or phrases that provide additional context. non empty",
+                "Related keywords or phrases that provide additional context. > 1",
               items: {
                 type: "string",
               },
             },
-            potential_hurdles: {
+            obstacles: {
               type: "array",
               description:
-                "Potential obstacles or hurdles identified in the goal text. non empty",
+                "Potential obstacles or hurdles identified in the goal text. > 1",
               items: {
                 type: "string",
               },
@@ -193,11 +195,9 @@ export const generate_subgoals = {
             "description",
             "importance",
             "keywords",
-            "potential_hurdles",
+            "obstacles",
           ],
         },
-        description:
-          "List of subgoals generated from the main goal, score, and context",
       },
     },
     required: ["subgoals"],
@@ -248,7 +248,7 @@ export const system_prompts = {
 
   generate_subgoals: {
     message:
-      "AI, now you have all the necessary inputs to generate sub goals for the main goal. Use the goal's score, context, and any resources found to create relevant sub goals that will assist the user in achieving their goal. Remember to ensure each sub goal is specific, measurable, achievable, relevant, and time-bound.",
+      "AI, now you have all the necessary inputs to generate sub goals for the main goal. Use the goal's context and any resources found to create relevant sub goals that will assist the user in achieving their goal. Remember to ensure each sub goal is specific, measurable, achievable, relevant, and time-bound. The number of sub goals is dependent on NUMBER_OF_SUBGOALS",
     model: "gpt-3.5-turbo-16k",
     temperature: 1.4,
   },
@@ -274,3 +274,12 @@ export const system_prompts = {
     temperature: 1.4,
   },
 } as const;
+
+export const THRESHOLD = 0.1; // for children
+export const MAX_DEPTH = 5;
+export const BASE = Math.pow(THRESHOLD, 1 / MAX_DEPTH); // or discount_factor  Math.pow((THRESHOLD / INITIAL_SCORE), (1/MAX_DEPTH)); const MAX_DEPTH = 5;
+export const PRIORITY_WEIGHT = 0.5; // Weight for Priority
+export const RELEVANCE_WEIGHT = 0.3; // Weight for Relevance
+export const COMPLEXITY_WEIGHT = 0.2; // Weight for Complexity
+export const COST_PER_NODE = 0.002; //$
+// const MAX_TOTAL_NODES = Math.floor(BUDGET / COST_PER_NODE);

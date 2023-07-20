@@ -3,12 +3,12 @@ import clsx from "clsx";
 export const Spinner = ({ className = "" }: { className?: string }) => {
   return (
     <svg
+      aria-hidden="true"
       className={clsx(
-        "mr-2 inline h-10 w-10 animate-spin fill-primary text-gray-dark",
+        "inline w-10 h-10 mr-2 text-gray-200 animate-spin fill-blue-600",
         className
       )}
       viewBox="0 0 100 101"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
@@ -27,10 +27,10 @@ export const Loading = () => {
   return (
     <div
       role="status"
-      className="flex h-full w-full flex-col items-center justify-center gap-3"
+      className="flex flex-col items-center justify-center w-full h-full gap-3"
     >
       <Spinner />
-      <span className=" text-xl text-light/20">Loading...</span>
+      <span className="text-xl text-light/20">Loading...</span>
     </div>
   );
 };

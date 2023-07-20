@@ -1,8 +1,14 @@
 import { Handle, NodeProps, Position } from "reactflow";
 
 import clsx from "clsx";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, useState } from "react";
+import {
+  ServiceStatus,
+  selectGoalStatus,
+  useTreeStore,
+} from "~/lib/hooks/useTree";
 
 type GoalNodeData = {
   label: string;
@@ -10,25 +16,39 @@ type GoalNodeData = {
   description: string;
 };
 
+const statusMap: Record<
+  Extract<
+    ServiceStatus,
+    "calculateScore" | "generateSubgoals" | "messageEnrich"
+  >,
+  string
+> = {
+  calculateScore: "Calculating score...",
+  generateSubgoals: "Generating subnodes....",
+  messageEnrich: "Enriching context...",
+};
+
 const GoalNode = ({
   data: { label, keywords, description },
   id,
   selected,
 }: NodeProps<GoalNodeData>) => {
-  const { push, back } = useRouter();
+  const { push } = useRouter();
   const [toggle, setToggle] = useState<boolean>(false);
+  const status = useTreeStore(selectGoalStatus(id));
 
   return (
     <div
       onClick={() => {
-        toggle ? back() : push(`/tree/new/goal/${id}`);
+        toggle ? push(`/tree/new/`) : push(`/tree/new/goal/${id}`);
         setToggle((toggle) => !toggle);
       }}
       className={clsx(
-        "relative flex flex-col bg-white border  rounded-xl w-96 duration-150",
+        "relative flex flex-col bg-white border rounded-xl w-96 duration-150",
         selected
           ? "border-blue-500 shadow-blue-200/50"
-          : "border-gray-light-secondary "
+          : "border-gray-light-secondary ",
+        status === "error" && "border-red-500"
       )}
     >
       <Handle
@@ -36,6 +56,15 @@ const GoalNode = ({
         position={Position.Top}
         className="!w-6 !h-3 !border !-top-[7px] !rounded !border-gray-light-secondary !bg-light-secondary"
       />
+
+      {status !== "idle" &&
+        status !== "done" &&
+        status !== "error" &&
+        status && (
+          <div className="absolute flex items-center gap-1 px-1 py-0.5 text-xs font-medium text-blue-800 translate-y-full bg-blue-200 border border-blue-500 rounded-md -bottom-3">
+            <Loader2 className="w-3 h-3 animate-spin " /> {statusMap[status]}
+          </div>
+        )}
 
       <div className="absolute p-1 text-xs uppercase bg-yellow-200 border border-yellow-500 rounded-lg right-1 rotate-12 text-yellow-950 -top-2">
         High
