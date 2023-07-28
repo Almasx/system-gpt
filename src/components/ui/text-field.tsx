@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { forwardRef } from "react";
-import type { IField } from "~/core/ui/types";
+import type { IField } from "~/components/ui/types";
 
 export type ITextFieldProps<T> = {
   className?: string;
@@ -73,13 +73,12 @@ const TextField = forwardRef<
             {endIcon}
           </div>
         )}
-        {label !== undefined && (
+        {Boolean(label) && (
           <label
             htmlFor={name}
             className="bg-light/80 text-dark absolute border border-gray-light-secondary py-0.5
-                 top-1.5 z-10 origin-[0] -translate-y-4 translate-x-3 transform
-                 rounded-md px-1.5 text-xs uration-300
-                 "
+                         top-1.5 z-10 origin-[0] -translate-y-4 translate-x-3 transform
+                         rounded-md px-1.5 text-xs duration-300 left-0.5"
           >
             {label}
           </label>

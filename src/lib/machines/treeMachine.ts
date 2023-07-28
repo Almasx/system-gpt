@@ -1,12 +1,13 @@
-import { assign, createMachine } from "xstate";
 import { Goal, PartialGoal } from "~/types/goal";
 import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
+import { assign, createMachine } from "xstate";
 
 import { createActorContext } from "@xstate/react";
 import { goalMachine } from "./goalMachine";
 
 interface TreeContext {
   stack: Array<PartialGoal | Goal>;
+  currentGoal: PartialGoal | null;
   // resources: Array<Resource>;
   onGenerate: null | ((goal: Goal) => void);
   onUpdate: UpdateGoal | null;
@@ -18,7 +19,6 @@ type TreeEvent =
       type: "START";
       goal: PartialGoal;
       onGenerate: (goal: Goal) => void;
-      onRoot: (goal: PartialGoal) => void;
       onStatusUpdate: UpdateGoalStatus;
       onUpdate: UpdateGoal;
     }
@@ -33,21 +33,19 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
     onGenerate: null,
     onUpdate: null,
     onStatusUpdate: null,
+    currentGoal: null,
   },
   states: {
     idle: {
       on: {
         START: {
           target: "checkStack",
-          actions: assign((_, event) => {
-            event.onRoot(event.goal);
-            return {
-              onGenerate: event.onGenerate,
-              onUpdate: event.onUpdate,
-              onStatusUpdate: event.onStatusUpdate,
-              stack: [event.goal],
-            };
-          }),
+          actions: assign((_, event) => ({
+            onGenerate: event.onGenerate,
+            onUpdate: event.onUpdate,
+            onStatusUpdate: event.onStatusUpdate,
+            stack: [event.goal],
+          })),
         },
       },
     },
@@ -57,6 +55,9 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
         { target: "done", cond: (context) => context.stack.length === 0 },
         {
           target: "processGoal",
+          actions: assign((context) => ({
+            currentGoal: context.stack.shift(), // pop the goal from stack
+          })),
         },
       ],
     },
@@ -68,7 +69,7 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
         data: (context) => ({
           update: context.onUpdate,
           statusUpdate: context.onStatusUpdate,
-          ...context.stack.shift(),
+          ...context.currentGoal,
         }),
         onDone: {
           target: "checkStack",

@@ -4,7 +4,7 @@ Note: DO NOT include break time. Only include work blocks
 
 Task: Choose a specific time and place to perform this habit based on previous thoughts to make the cue as clear as possible, and remember, consistency is key. Generate calendar for him`;
 
-export const system_message = `Imagine three different experts are answering this question.
+export const brainstorm_system = `Imagine three different experts are answering this question.
 They will brainstorm the answer step by step reasoning carefully and taking all facts into consideration
 All experts will write down 1 step of their thinking, then share it with the group.
 They will each critique their response, and the all the responses of others
@@ -58,8 +58,8 @@ export const ai_create_schedule = {
   },
 };
 
-export const extract_create_context = {
-  name: "extract_create_context",
+export const extract_root = {
+  name: "extract_context",
   description:
     "Extracts and think of key context information from the input goal text for later use",
   parameters: {
@@ -69,48 +69,38 @@ export const extract_create_context = {
         type: "string",
         description: "The title of the goal",
       },
-      goal_description: {
+      goal_content: {
         type: "string",
-        description: "The text description of the goal",
+        description: "The text context for goal",
       },
-      goal_context: {
+      goal_importance: {
+        type: "number",
+        description: "Importance of the goal (0-2)",
+      },
+      goal_keywords: {
         type: "array",
         description:
-          "Generate big array of relevent information for later use.",
+          "Related keywords or phrases that provide additional context. > 1",
         items: {
-          type: "object",
-          properties: {
-            topic: {
-              type: "string",
-              description: "Key topic or entity extracted from the goal text",
-            },
-            importance: {
-              type: "string",
-              description:
-                "Importance of the topic or entity in the context of the goal (High, Medium, Low)",
-            },
-            keywords: {
-              type: "array",
-              description:
-                "Related keywords or phrases that provide additional context. non empty",
-              items: {
-                type: "string",
-              },
-            },
-            potential_hurdles: {
-              type: "array",
-              description:
-                "Potential obstacles or hurdles identified in the goal text. non empty",
-              items: {
-                type: "string",
-              },
-            },
-          },
-          required: ["topic", "importance", "keywords", "potential_hurdles"],
+          type: "string",
+        },
+      },
+      goal_obstacles: {
+        type: "array",
+        description:
+          "Potential obstacles or hurdles identified in the goal text. > 1",
+        items: {
+          type: "string",
         },
       },
     },
-    required: ["goal_topic", "goal_description", "goal_context"],
+    required: [
+      "goal_topic",
+      "goal_content",
+      "goal_keywords",
+      "goal_obstacles",
+      "goal_importance",
+    ],
   },
 };
 
@@ -169,9 +159,9 @@ export const generate_subgoals = {
                 "Description as well as content of the subgoal as much as possible",
             },
             importance: {
-              type: "string",
+              type: "number",
               description:
-                "Importance of the topic or entity in the context of the goal (High, Medium, Low)",
+                "Importance of the topic or entity in the context of the goal 0 - Low, 1 - Medium, 2 - High",
             },
             keywords: {
               type: "array",
@@ -239,6 +229,12 @@ export const search_resources = {
 };
 
 export const system_prompts = {
+  goal_conversation: {
+    message: `The following is an informative conversation between a human and an AI goal adviser. AI goal adviser will really try to think out of box. Given user's goal AI advices will try to to develop very specific, achievable goals that subscribes to the SMART goals method with user. The goal adviser will ask lots of questions. The goal adviser will attempt to answer any question asked and will always probe for the human's appetite and goals by asking questions of its own. If the human's appetite is low it will offer conservative goal advice, if the appetite of the human is higher it will offer more aggressive
+    advice. In the end you should finalize your work so i can forward this to another AI. There also has to be feedback to user. The conversation is:`,
+    model: "gpt-3.5-turbo",
+    temperature: 1.3,
+  },
   message_enrich: {
     message:
       "The AI agent in this process is tasked with enriching a provided sub goal and its associated attributes into a more detailed context.  It will try to think about it more and brainstorm quality content and insights. The high-level purpose is to augment the user's understanding and planning around this sub goal, thereby facilitating more effective roadmap creation. The final output will be a more in-depth text.",
@@ -278,8 +274,8 @@ export const system_prompts = {
 export const THRESHOLD = 0.1; // for children
 export const MAX_DEPTH = 5;
 export const BASE = Math.pow(THRESHOLD, 1 / MAX_DEPTH); // or discount_factor  Math.pow((THRESHOLD / INITIAL_SCORE), (1/MAX_DEPTH)); const MAX_DEPTH = 5;
-export const PRIORITY_WEIGHT = 0.5; // Weight for Priority
-export const RELEVANCE_WEIGHT = 0.3; // Weight for Relevance
-export const COMPLEXITY_WEIGHT = 0.2; // Weight for Complexity
+export const PRIORITY_WEIGHT = 0.1; // Weight for Priority
+export const RELEVANCE_WEIGHT = 0.4; // Weight for Relevance
+export const COMPLEXITY_WEIGHT = 0.5; // Weight for Complexity
 export const COST_PER_NODE = 0.002; //$
 // const MAX_TOTAL_NODES = Math.floor(BUDGET / COST_PER_NODE);

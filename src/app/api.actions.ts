@@ -1,12 +1,11 @@
 "use server";
 
-import { OpenAIMessage, StateMessage } from "~/types/message";
+import { OpenAIMessage } from "~/types/message";
 
 import { zact } from "zact/server";
 import { z } from "zod";
 import { createShedule } from "~/lib/services/calendar";
 import { openai } from "~/lib/services/openai";
-import { redis } from "~/lib/services/redis";
 import { workBlockSchema } from "~/types/work-block";
 
 export const scheduleCalendar = zact(
@@ -91,39 +90,4 @@ export const openaiFunctions = async (
   console.log(ai_response);
 
   return ai_response;
-};
-
-interface cacheOptions {
-  id: string;
-  title: string;
-  messages: StateMessage[];
-  userId: string;
-}
-
-export const cache = async <T>(
-  { id, title, messages, userId }: cacheOptions,
-  response: T
-) => {
-  const createdAt = Date.now();
-  const path = `/chat/${id}`;
-  const payload = {
-    id,
-    title,
-    userId,
-    createdAt,
-    path,
-    messages: [
-      ...messages,
-      {
-        content: response,
-        role: "assistant",
-      },
-    ],
-  };
-
-  await redis.hmset(`chat:${id}`, payload);
-  await redis.zadd(`user:chat:${userId}`, {
-    score: createdAt,
-    member: `chat:${id}`,
-  });
 };

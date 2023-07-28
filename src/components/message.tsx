@@ -5,7 +5,7 @@ import { Calendar, Day } from "./calendar";
 import { useUser } from "@clerk/nextjs";
 import clsx from "clsx";
 import Image from "next/image";
-import Button from "~/core/ui/button";
+import Button from "~/components/ui/button";
 
 export type MessageProps = {
   type: "user" | "assistant";

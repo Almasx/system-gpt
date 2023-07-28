@@ -1,9 +1,9 @@
 import { assign, createMachine } from "xstate";
-import { openaiChat, openaiFunctions } from "~/app/actions";
+import { openaiChat, openaiFunctions } from "~/app/api.actions";
 import { PartialGoal, Score, scoreShema, subgoalSchema } from "~/types/goal";
 import { generate_subgoals, score_goal, system_prompts } from "../constants";
 import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
-import { calculateSubnodePosition, nanoid } from "../utils";
+import { calculateChildren, nanoid } from "../utils";
 
 // export interface Resource {
 //   title: string;
@@ -53,10 +53,6 @@ export const goalMachine = createMachine<
         score: null,
       },
       children: [],
-      position: {
-        x: null,
-        y: null,
-      },
     },
     states: {
       messageEnrich: {
@@ -77,6 +73,11 @@ export const goalMachine = createMachine<
                 context: event.data,
               }),
             }),
+          },
+          onError: {
+            target: "done",
+            actions: (context) =>
+              context.statusUpdate?.call(context.update, context.id!, "error"),
           },
         },
       },
@@ -114,6 +115,11 @@ export const goalMachine = createMachine<
               },
             }),
           },
+          onError: {
+            target: "done",
+            actions: (context) =>
+              context.statusUpdate?.call(context.update, context.id!, "error"),
+          },
         },
       },
       // searchResources: {
@@ -142,6 +148,11 @@ export const goalMachine = createMachine<
                 context.statusUpdate?.call(context.update, context.id!, "done"),
             ],
             target: "done",
+          },
+          onError: {
+            target: "done",
+            actions: (context) =>
+              context.statusUpdate?.call(context.update, context.id!, "error"),
           },
         },
       },
@@ -224,9 +235,15 @@ export const goalMachine = createMachine<
       },
 
       generateSubgoalsService: async (context): Promise<PartialGoal[]> => {
-        const prompt = `Context: ${context.meta.context}
-        Score: 
-        ${(JSON.stringify(context.meta.score), null, "\t")}`;
+        const numberChildren = calculateChildren(
+          context.meta.score!.priority,
+          context.meta.score!.relevance,
+          context.meta.score!.complexity,
+          context.depth!
+        );
+        const prompt = `NUMBER_OF_SUBGOALS=${numberChildren}
+        
+        Context: ${context.meta.context}`;
 
         console.log(prompt);
         const subgoalsRaw = await openaiFunctions(
@@ -256,11 +273,6 @@ export const goalMachine = createMachine<
         //   setTimeout(() => resolve(0), 2000)
         // );
 
-        const childPosition = calculateSubnodePosition(
-          context.position as any,
-          subgoals.length
-        );
-
         // return Array(2)
         //   .fill("")
         //   .map((_, index) => ({
@@ -274,18 +286,11 @@ export const goalMachine = createMachine<
           ...subgoal,
           topic: subgoal.sub_goal,
           description: subgoal.sub_goal_content,
-          meta: {
-            context: "",
-            score: {
-              complexity: 0,
-              relevance: 0,
-              priority: 0,
-            },
-          },
+          importance: subgoal.importance as 0 | 1 | 2,
+          meta: {},
           children: [],
           id: nanoid(),
           depth: context.depth! + 1,
-          position: childPosition[index],
         }));
       },
     },

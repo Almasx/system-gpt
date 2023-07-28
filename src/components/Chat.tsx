@@ -1,7 +1,7 @@
 import { useState } from "react";
-import TextAreaField from "../core/ui/text-area";
-import { ChatMachineContext } from "../lib/machines/chatMachine";
+import { ChatMachineContext } from "~/lib/machines/chatMachine";
 import { Message } from "./message";
+import TextAreaField from "./ui/text-area";
 
 const Chat = () => {
   return (
@@ -9,11 +9,10 @@ const Chat = () => {
       <div className="flex flex-col w-full mt-5 border-b border-x border-gray-light-secondary rounded-xl overflow-clip ">
         <History />
         <Loading />
-        <Complete />
       </div>
 
       <Error />
-      <Suggestion />
+      <UserMessage />
     </>
   );
 };
@@ -22,34 +21,16 @@ export const History = () => {
   const chatHistory = ChatMachineContext.useSelector(
     (state) => state.context.chatHistory
   );
-  const calendarLoading = ChatMachineContext.useSelector((state) =>
-    state.matches("chatFlow.addingCalendarToUser")
-  );
-  const { send } = ChatMachineContext.useActorRef();
 
   return (
     <>
       {...chatHistory.map((message, index) => {
-        if (message.role !== "system" && !message.hiddenUI) {
+        if (message.role !== "system") {
           return (
             <Message.Wrapper
               key={index}
-              message={
-                typeof message.content === "string" ? (
-                  message.content
-                ) : (
-                  <Message.Calendar
-                    days={message.content.days}
-                    onSchedule={() => {
-                      send({
-                        type: "ADD_CALENDAR",
-                      });
-                    }}
-                    loading={calendarLoading}
-                  />
-                )
-              }
-              id={index.toString()}
+              message={message.content}
+              id={`chat-${message.content}`}
               type={message.role}
             />
           );
@@ -73,29 +54,29 @@ const Error = () => {
   }
 };
 
-export const Suggestion = () => {
-  const [suggestion, setSuggestion] = useState("");
+export const UserMessage = () => {
+  const [message, setMessage] = useState("");
   const { send } = ChatMachineContext.useActorRef();
   const done = ChatMachineContext.useSelector((state) => state.done);
   if (!done) {
     return (
-      <div className="p-4 pt-5 -ml-[6.5px]  bg-light-secondary/60 fixed bottom-0 w-[1024px] left-1/2 -translate-x-1/2 backdrop-blur border border-gray-light-secondary rounded-xl overflow-clip">
+      <div className="p-4 pt-5 bg-light-secondary/60 fixed bottom-0 w-[1024px] left-1/2 -translate-x-1/2 backdrop-blur border border-gray-light-secondary rounded-xl overflow-clip">
         <TextAreaField
-          label="Suggestion"
-          placeholder="I want to change it to ..."
-          value={suggestion}
-          onChange={(e) => setSuggestion(e.target.value)}
+          label="Chat"
+          placeholder="Chat here with AI..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           className="!bg-white/40 rounded-2xl"
           endIcon={
             <button
               type="button"
               onClick={() => {
-                send({ type: "REFACTOR_CALENDAR", suggestion });
-                setSuggestion("");
+                send({ type: "REFACTOR_GOAL", message });
+                setMessage("");
               }}
               className="flex items-center justify-center h-8 p-3 font-medium text-white bg-black rounded-lg"
             >
-              Suggest
+              Send
             </button>
           }
         />
@@ -122,23 +103,23 @@ const Loading = () => {
   }
 };
 
-const Complete = () => {
-  const done = ChatMachineContext.useSelector((state) => state.done);
+// const Complete = () => {
+//   const done = ChatMachineContext.useSelector((state) => state.done);
 
-  if (done) {
-    return (
-      <p className="flex pt-1 text-base break-all">
-        Your schedule is completed 🚀 Checkout: your{" "}
-        <a
-          href="https://calendar.google.com/calendar/"
-          className="text-blue-500"
-        >
-          {" "}
-          Calendar
-        </a>
-      </p>
-    );
-  }
-};
+//   if (done) {
+//     return (
+//       <p className="flex pt-1 text-base break-all">
+//         Your schedule is completed 🚀 Checkout: your{" "}
+//         <a
+//           href="https://calendar.google.com/calendar/"
+//           className="text-blue-500"
+//         >
+//           {" "}
+//           Calendar
+//         </a>
+//       </p>
+//     );
+//   }
+// };
 
 export default Chat;

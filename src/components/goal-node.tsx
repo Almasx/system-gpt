@@ -1,14 +1,14 @@
 import { Handle, NodeProps, Position } from "reactflow";
-
-import clsx from "clsx";
-import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { memo, useState } from "react";
 import {
   ServiceStatus,
   selectGoalStatus,
   useTreeStore,
 } from "~/lib/hooks/useTree";
+
+import clsx from "clsx";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 type GoalNodeData = {
   label: string;
@@ -33,14 +33,13 @@ const GoalNode = ({
   id,
   selected,
 }: NodeProps<GoalNodeData>) => {
-  const { push } = useRouter();
   const [toggle, setToggle] = useState<boolean>(false);
   const status = useTreeStore(selectGoalStatus(id));
 
   return (
-    <div
+    <Link
+      href={toggle ? `/tree/new/` : `/tree/new/goal/${id}`}
       onClick={() => {
-        toggle ? push(`/tree/new/`) : push(`/tree/new/goal/${id}`);
         setToggle((toggle) => !toggle);
       }}
       className={clsx(
@@ -91,8 +90,8 @@ const GoalNode = ({
         position={Position.Bottom}
         className="!w-6 !h-3 !border !-bottom-[7px] !rounded !border-gray-light-secondary !bg-light-secondary"
       />
-    </div>
+    </Link>
   );
 };
 
-export default memo(GoalNode);
+export default GoalNode;

@@ -1,8 +1,15 @@
 import { Day, EventUI } from "~/components/calendar";
+import {
+  BASE,
+  COMPLEXITY_WEIGHT,
+  PRIORITY_WEIGHT,
+  RELEVANCE_WEIGHT,
+  THRESHOLD,
+} from "./constants";
 
-import { WorkBlock } from "~/types/work-block";
-import { convertWorkBlocksUI } from "~/components/calendar";
 import { customAlphabet } from "nanoid";
+import { convertWorkBlocksUI } from "~/components/calendar";
+import { WorkBlock } from "~/types/work-block";
 
 export const nanoid = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
@@ -112,17 +119,41 @@ interface Position {
 export function calculateSubnodePosition(
   parentNode: Position,
   subnodes: number,
-  radius = 450,
-  startAngle = 45
+  nodeWidth = 350,
+  nodeHeight = 180,
+  horizontalGap = 150,
+  verticalGap = 150
 ) {
-  startAngle = startAngle * (Math.PI / 180);
-  const angularSeparation = Math.PI / subnodes;
   const subnodePositions = [];
+
+  // The first child is positioned directly below the parent and centered
+  const totalWidth = subnodes * nodeWidth + (subnodes - 1) * horizontalGap;
+  const firstChildX = parentNode.x - totalWidth / 2 + nodeWidth / 2; // Centered
+  const firstChildY = parentNode.y + nodeHeight + verticalGap;
+
   for (let i = 0; i < subnodes; i++) {
-    const angle = startAngle + i * angularSeparation;
-    const x_subnode = parentNode.x + radius * Math.cos(angle);
-    const y_subnode = parentNode.y + radius * Math.sin(angle);
+    // Compute the position for this child
+    const x_subnode = firstChildX + i * (nodeWidth + horizontalGap);
+    const y_subnode = firstChildY;
+
     subnodePositions.push({ x: x_subnode, y: y_subnode });
   }
+
   return subnodePositions;
 }
+
+export const calculateChildren = (
+  priority: number,
+  relevance: number,
+  complexity: number,
+  depth: number
+) => {
+  const score =
+    PRIORITY_WEIGHT * priority * 0.1 +
+    RELEVANCE_WEIGHT * relevance * 0.1 +
+    COMPLEXITY_WEIGHT * complexity * 0.1;
+  const discount_factor = BASE ** depth;
+  const discounted_score = score * discount_factor;
+  const number_of_children = discounted_score / THRESHOLD;
+  return Math.round(number_of_children);
+};

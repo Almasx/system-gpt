@@ -3,7 +3,7 @@
 import { forwardRef, useRef } from "react";
 
 import clsx from "clsx";
-import type { IField } from "~/core/ui/types";
+import type { IField } from "~/components/ui/types";
 
 export type ITextAreaFieldProps<T> = {
   className?: string;
@@ -67,8 +67,6 @@ const TextAreaField = forwardRef<
                 textAreaRef.current.style.height = "0px";
                 const scrollHeight = textAreaRef.current.scrollHeight;
 
-                // We then set the height directly, outside of the render loop
-                // Trying to set this with state or a textAreaRef will product an incorrect value.
                 textAreaRef.current.style.height = scrollHeight + "px";
               }
               onChange && onChange(e);
@@ -78,7 +76,7 @@ const TextAreaField = forwardRef<
             }}
             placeholder={placeholder}
             className={clsx(
-              " border-gray-light-secondary bg-light ",
+              "border-gray-light-secondary bg-light ",
               "peer ease w-full rounded-2xl border px-5 pt-4 py-3 text-sm focus:outline-none",
               "text-dark  placeholder:text-dark/30 ",
               error && "border-red-500 bg-red-500/10",
