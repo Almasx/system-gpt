@@ -3,23 +3,34 @@
 import { redis } from "~/lib/services/redis";
 import { OpenAIMessage } from "~/types/message";
 
-export const cacheRootGoalMessages = async (
+export const saveRootGoalMessage = async (
   journeyId: string,
-  messages: OpenAIMessage[],
-  response: string
+  message: OpenAIMessage
 ) => {
   const createdAt = Date.now();
-  const payload = [
-    ...messages,
-    {
-      content: response,
-      role: "assistant",
-    },
-  ];
 
-  await redis.json.set(
+  await redis.json.arrappend(
     `journey:${journeyId}`,
     "$.stages.goalConversation",
-    payload
+    { ...message, createdAt }
   );
+};
+
+export const getRootGoalMessages = async (journeyId: string) => {
+  const goalConversation: OpenAIMessage[] = await redis.json.get(
+    `journey:${journeyId}`,
+    "$.stages.goalConversation[*]"
+  );
+
+  let state: "idle" | "refactor" | "done" = "idle";
+  console.log(goalConversation);
+
+  if (goalConversation.length > 0) {
+    state = "refactor";
+    const rootGoal = null;
+    console.log(goalConversation);
+    return { goalConversation, state };
+  }
+
+  return { state };
 };

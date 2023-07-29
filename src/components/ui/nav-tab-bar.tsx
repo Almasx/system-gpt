@@ -7,18 +7,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTabBar } from "~/lib/hooks/useTabBar";
 
-const TabBarProvider = createContext<{
+const NavTabBarProvider = createContext<{
   setActive: ((value: string) => void) | null;
   setRef: ((value: string, ref: HTMLAnchorElement) => void) | null;
 }>({ setActive: null, setRef: null });
 
-export const TabBar = ({
+export const NavTabBar = ({
   children,
   initialTab,
 }: {
   children: React.ReactNode;
   initialTab: string;
 }) => {
+  const path = usePathname();
   const { indicatorRef, setRef, setActive } = useTabBar<
     HTMLAnchorElement,
     HTMLDivElement
@@ -26,7 +27,7 @@ export const TabBar = ({
 
   return (
     <div className="relative">
-      <TabBarProvider.Provider value={{ setActive, setRef }}>
+      <NavTabBarProvider.Provider value={{ setActive, setRef }}>
         <div className="flex flex-row gap-1 p-1 border rounded-xl border-gray-light-secondary">
           {children}
         </div>
@@ -34,13 +35,13 @@ export const TabBar = ({
           ref={indicatorRef}
           className="absolute w-16 h-8 duration-200 -translate-y-1/2 border rounded-lg top-1/2 bg-light border-gray-light-secondary"
         />
-      </TabBarProvider.Provider>
+      </NavTabBarProvider.Provider>
     </div>
   );
 };
 
 export const LinkTab = ({ href, label }: { href: string; label: string }) => {
-  const { setActive, setRef } = useContext(TabBarProvider);
+  const { setActive, setRef } = useContext(NavTabBarProvider);
   const path = usePathname();
 
   return (

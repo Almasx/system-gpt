@@ -14,16 +14,16 @@ export const create = zact(z.object({ userId: z.string() }))(
     const createdAt = Date.now();
     const payload: Journey = {
       id,
-      title: null,
+      title: "",
       description: "",
       stages: {
-        goalConversation: null,
+        goalConversation: [],
       },
       userId,
       createdAt,
     };
 
-    await redis.json.set(`journey:${id}`, ".", payload);
+    await redis.json.set(`journey:${id}`, "$", payload);
     await redis.zadd(`user:${userId}:journeys`, {
       score: createdAt,
       member: `journey:${id}`,
@@ -34,3 +34,10 @@ export const create = zact(z.object({ userId: z.string() }))(
     return id;
   }
 );
+
+export const patchTitle = zact(
+  z.object({ journeyId: z.string(), title: z.string() })
+)(async ({ journeyId, title }) => {
+  console.log(journeyId, title);
+  await redis.json.set(`journey:${journeyId}`, "$.title", `"${title}"`);
+});

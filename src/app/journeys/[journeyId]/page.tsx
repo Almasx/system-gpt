@@ -40,6 +40,21 @@ export default function SystemGenerator() {
     state.matches("chatFlow.addingRootGoal")
   );
 
+  const checkDB = ChatMachineContext.useSelector((state) =>
+    state.matches("chatFlow.checkDB")
+  );
+
+  if (checkDB) {
+    return (
+      <Modal.Root visible={checkDB}>
+        <div className="flex items-center gap-4 px-8 py-6 bg-white border rounded-xl border-gray-light-secondary">
+          <Loader2 className="w-4 h-4 animate-spin " /> Loading conversation
+          from db..
+        </div>
+      </Modal.Root>
+    );
+  }
+
   return (
     <main className="flex flex-col items-center h-screen gap-5 overflow-x-hidden bg-white border border-gray-light-secondary rounded-t-xl">
       <AutoAnimate className="max-w-[1024px] ">
@@ -56,7 +71,7 @@ export default function SystemGenerator() {
           {(methods.formState.isSubmitted || !idle) && <Chat />}
         </div>
       </AutoAnimate>
-      <Modal.Root visible={generatingGoal} setVisible={() => {}}>
+      <Modal.Root visible={generatingGoal}>
         <div className="flex items-center gap-4 px-8 py-6 bg-white border rounded-xl border-gray-light-secondary">
           <Loader2 className="w-4 h-4 animate-spin " /> Generating root goal..
         </div>
@@ -79,6 +94,7 @@ const Form = () => {
   const idle = ChatMachineContext.useSelector((state) =>
     state.matches("chatFlow.idle")
   );
+
   const goalTopic = ChatMachineContext.useSelector(
     (state) => state.context.user.topic
   );
@@ -113,7 +129,8 @@ const Form = () => {
                    backdrop-blur"
       >
         <div className="px-4">
-          {goalTopic!.charAt(0).toUpperCase() + goalTopic!.slice(1)}
+          {goalTopic &&
+            goalTopic!.charAt(0).toUpperCase() + goalTopic!.slice(1)}
         </div>
         <button
           type="button"

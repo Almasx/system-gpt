@@ -1,4 +1,4 @@
-import { PartialGoal, Score } from "~/types/goal";
+import { Score, UnprocessedGoal } from "~/types/goal";
 
 import { enableMapSet } from "immer";
 import { create } from "zustand";
@@ -17,7 +17,7 @@ export type ServiceStatus =
 type State = {
   goals: Map<
     string,
-    PartialGoal & {
+    UnprocessedGoal & {
       status: ServiceStatus;
     }
   >;
@@ -31,7 +31,7 @@ export type UpdateGoal = (
 export type UpdateGoalStatus = (id: string, status: ServiceStatus) => void;
 
 type Actions = {
-  addGoal: (goal: PartialGoal) => void;
+  addGoal: (goal: UnprocessedGoal) => void;
   removeGoal: (id: string) => void;
   updateGoal: UpdateGoal;
   updateGoalStatus: UpdateGoalStatus;
