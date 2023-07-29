@@ -1,8 +1,10 @@
 export type Journey = {
   id: string;
   title: string | null;
-  nodes: [];
+  stages: {
+    goalConversation: null;
+  };
   description: string;
   userId: string;
-  createdAt: Date;
+  createdAt: number;
 };

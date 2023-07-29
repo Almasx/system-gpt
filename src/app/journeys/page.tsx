@@ -6,13 +6,11 @@ import { Journey } from "~/types/journey";
 import Line from "../../../public/line.svg";
 import { CreateJourney } from "./client-component";
 
-export default async function Jouneys() {
-  // redis.zrange()
-
+export default async function Journeys() {
   const { userId } = auth();
   const pipeline = redis.pipeline();
   const journeysId: string[] = await redis.zrange(
-    `user:chat:${userId}`,
+    `user:${userId}:journeys`,
     0,
     -1,
     {
@@ -23,25 +21,29 @@ export default async function Jouneys() {
   for (const journeyId of journeysId) {
     pipeline.hgetall(journeyId);
   }
+  console.log(journeysId);
 
-  const journeys = (await pipeline.exec()) as Journey[];
+  const journeys: Journey[] =
+    journeysId.length > 0 ? await pipeline.exec() : [];
 
-  return (
-    <main className="flex flex-col items-center h-screen gap-5 overflow-x-hidden bg-white border border-gray-light-secondary rounded-t-xl">
-      <div className="w-[1024px] py-32 relative z-10">
-        <div className="flex justify-between mb-10">
-          <h1 className="text-4xl font-meduim">Journeys</h1>
-          <CreateJourney />
+  if (userId) {
+    return (
+      <main className="relative flex flex-col items-center h-screen gap-5 overflow-clip">
+        <div className="w-[1024px] py-32 z-10">
+          <div className="flex justify-between mb-10">
+            <h1 className="text-4xl font-bold">Journeys</h1>
+            <CreateJourney userId={userId} />
+          </div>
+          <div className="grid grid-cols-3 gap-5">
+            {journeys.map((journey) => (
+              <GoalCard key={journey.id} journey={journey} />
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-5">
-          {journeys.map((journey) => (
-            <GoalCard key={journey.id} journey={journey} />
-          ))}
-        </div>
-      </div>
-      <Image className="absolute inset-0" src={Line} alt="line" />
-    </main>
-  );
+        <Image className="absolute inset-0" src={Line} alt="line" />
+      </main>
+    );
+  }
 }
 
 export const GoalCard = ({ journey }: { journey: Journey }) => {

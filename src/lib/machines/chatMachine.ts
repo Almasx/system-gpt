@@ -1,18 +1,14 @@
 import { assign, createMachine, raise } from "xstate";
-import {
-  cacheRootGoalConveration,
-  openaiChat,
-  openaiFunctions,
-} from "~/app/api.actions";
+import { openaiChat, openaiFunctions } from "~/app/api.actions";
 import { extract_root, system_prompts } from "../constants";
 
 import { createActorContext } from "@xstate/react";
-import { nanoid } from "nanoid";
+import { cacheRootGoalMessages } from "~/app/journeys/[journeyId]/goal.actions";
 import { rootGoalSchema } from "~/types/goal";
 import { OpenAIMessage } from "~/types/message";
 
-interface Context {
-  id: string;
+interface ChatContext {
+  journeyId: string | null;
   chatHistory: OpenAIMessage[];
   goal: {
     topic: string;
@@ -23,18 +19,17 @@ interface Context {
   } | null;
   user: {
     topic: string | null;
-    userId: string | null;
     onGoal: ((rootGoal: any) => void) | null;
   };
   message: string | null;
 }
 
-type Event =
+type ChatEvents =
   | {
       type: "SET_GOAL";
       goal: string;
-      userId: string;
       topic: string;
+      journeyId: string;
       onGoal: (rootGoal: any) => void;
     }
   | {
@@ -42,20 +37,17 @@ type Event =
       message: string;
     }
   | { type: "PERSIST_GOAL" }
-  | {
-      type: "LOADING";
-    }
+  | { type: "LOADING" }
   | { type: "DONE_LOADING" };
 
-export const chatMachine = createMachine<Context, Event>(
+export const chatMachine = createMachine<ChatContext, ChatEvents>(
   {
     predictableActionArguments: true,
     id: "chat",
     type: "parallel",
     context: {
-      id: nanoid(),
+      journeyId: null,
       user: {
-        userId: null,
         topic: null,
         onGoal: null,
       },
@@ -86,8 +78,8 @@ export const chatMachine = createMachine<Context, Event>(
                   user: (context, event) => ({
                     ...context.user,
                     topic: event.topic,
-                    userId: event.userId,
                     onGoal: event.onGoal,
+                    journeyId: event.journeyId,
                   }),
                   chatHistory: (context, event) => [
                     ...context.chatHistory,
@@ -173,31 +165,19 @@ export const chatMachine = createMachine<Context, Event>(
   {
     services: {
       sendChatbotMessage: async (context) => {
-        if (!context.user.userId) {
-          throw Error("Forbidden");
-        }
-
         const message = await openaiChat(
           context.chatHistory,
           system_prompts.goal_conversation
         );
-        await cacheRootGoalConveration(
-          {
-            id: context.id,
-            messages: context.chatHistory,
-            title: context.user.topic!,
-            userId: context.user.userId,
-          },
+        await cacheRootGoalMessages(
+          context.journeyId!,
+          context.chatHistory,
           message
         );
         return { role: "assistant", content: message };
       },
 
       addRootGoal: async (context) => {
-        if (!context.user.userId) {
-          throw Error("Forbidden");
-        }
-
         const rootGoalRaw = await openaiFunctions(
           context.chatHistory,
           [extract_root],

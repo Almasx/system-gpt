@@ -1,7 +1,6 @@
 import "./globals.css";
 
 import { ClerkProvider } from "@clerk/nextjs";
-import clsx from "clsx";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 
@@ -20,7 +19,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         data-domain="sapar.xyz"
         src="https://plausible.io/js/script.js"
       />
-      <body className={clsx(inter.className, "bg-light-secondary")}>
+      <body className={inter.className}>
         <ClerkProvider>{props.children}</ClerkProvider>
       </body>
     </html>

@@ -1,15 +1,15 @@
-import { Goal, PartialGoal } from "~/types/goal";
-import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
 import { assign, createMachine } from "xstate";
+import { ProcessedGoal, UnprocessedGoal } from "~/types/goal";
+import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
 
 import { createActorContext } from "@xstate/react";
 import { goalMachine } from "./goalMachine";
 
 interface TreeContext {
-  stack: Array<PartialGoal | Goal>;
-  currentGoal: PartialGoal | null;
+  stack: Array<UnprocessedGoal>;
+  currentGoal: UnprocessedGoal | null;
   // resources: Array<Resource>;
-  onGenerate: null | ((goal: Goal) => void);
+  onGenerate: null | ((goal: ProcessedGoal) => void);
   onUpdate: UpdateGoal | null;
   onStatusUpdate: UpdateGoalStatus | null;
 }
@@ -17,12 +17,12 @@ interface TreeContext {
 type TreeEvent =
   | {
       type: "START";
-      goal: PartialGoal;
-      onGenerate: (goal: Goal) => void;
+      goal: UnprocessedGoal;
+      onGenerate: (goal: ProcessedGoal) => void;
       onStatusUpdate: UpdateGoalStatus;
       onUpdate: UpdateGoal;
     }
-  | { type: "SUBGOALS_GENERATED"; goal: Goal }
+  | { type: "SUBGOALS_GENERATED"; goal: ProcessedGoal }
   | { type: "INTERRUPT" };
 
 export const treeMachine = createMachine<TreeContext, TreeEvent>({

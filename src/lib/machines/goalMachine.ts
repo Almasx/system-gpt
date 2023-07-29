@@ -1,17 +1,16 @@
 import { assign, createMachine } from "xstate";
 import { openaiChat, openaiFunctions } from "~/app/api.actions";
-import { PartialGoal, Score, scoreShema, subgoalSchema } from "~/types/goal";
+import {
+  Score,
+  UnprocessedGoal,
+  scoreShema,
+  subgoalSchema,
+} from "~/types/goal";
 import { generate_subgoals, score_goal, system_prompts } from "../constants";
 import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
 import { calculateChildren, nanoid } from "../utils";
 
-// export interface Resource {
-//   title: string;
-//   url: string;
-//   description: string;
-// }
-
-export type Events = {
+export type GoalEvents = {
   type: "INPUT_GOAL";
   topic: string;
   description: string;
@@ -19,16 +18,18 @@ export type Events = {
   keywords: string[];
 };
 
-export type Context<T extends Record<any, any>> = {
-  [K in keyof T]: T[K] extends Record<any, any> ? Context<T[K]> : T[K] | null;
+export type GoalContext<T extends Record<any, any>> = {
+  [K in keyof T]: T[K] extends Record<any, any>
+    ? GoalContext<T[K]>
+    : T[K] | null;
 };
 
 export const goalMachine = createMachine<
-  Context<PartialGoal> & {
+  GoalContext<UnprocessedGoal> & {
     update: null | UpdateGoal;
     statusUpdate: null | UpdateGoalStatus;
   },
-  Events
+  GoalEvents
 >(
   {
     predictableActionArguments: true,
@@ -199,10 +200,6 @@ export const goalMachine = createMachine<
           context: enrichedMessage,
         });
 
-        // await new Promise((resolve, reject) =>
-        //   setTimeout(() => resolve(0), 2000)
-        // );
-
         return enrichedMessage;
       },
 
@@ -223,18 +220,13 @@ export const goalMachine = createMachine<
 
         const score = scoreShema.parse(JSON.parse(scoreRaw));
 
-        // await new Promise((resolve, reject) =>
-        //   setTimeout(() => resolve(0), 2000)
-        // );
-        // console.log(context.update)
         context.update?.call(context.update, context.id!, {
-          score: score.goal, // { priority: 1, complexity: 2, relevance: 3 },
+          score: score.goal,
         });
-        // return { priority: 1, complexity: 2, relevance: 3 };
         return score.goal;
       },
 
-      generateSubgoalsService: async (context): Promise<PartialGoal[]> => {
+      generateSubgoalsService: async (context): Promise<UnprocessedGoal[]> => {
         const numberChildren = calculateChildren(
           context.meta.score!.priority,
           context.meta.score!.relevance,
@@ -263,24 +255,6 @@ export const goalMachine = createMachine<
         );
 
         const { subgoals } = subgoalSchema.parse(JSON.parse(subgoalsRaw));
-
-        //         const childPosition = calculateSubnodePosition(
-        //   context.position as any,
-        //   2
-        // );
-
-        // await new Promise((resolve, reject) =>
-        //   setTimeout(() => resolve(0), 2000)
-        // );
-
-        // return Array(2)
-        //   .fill("")
-        //   .map((_, index) => ({
-        //     ...rootGoal,
-        //     id: nanoid(),
-        //     position: childPosition[index],
-        //     meta: {},
-        //   }));
 
         return subgoals.map((subgoal, index) => ({
           ...subgoal,

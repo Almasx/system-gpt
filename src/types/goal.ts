@@ -1,35 +1,32 @@
 import { z } from "zod";
 
-export interface Goal {
-  id: string;
+type Goal = {
   topic: string;
   description: string;
   importance: 0 | 1 | 2;
   keywords: string[];
   obstacles: string[];
+};
+
+export type ProcessedGoal = {
+  id: string;
   meta: {
     score: Score;
-    // resources: Array<Resource>;
     context: string;
   };
-  children: Array<Goal>;
+  children: Array<ProcessedGoal>;
   depth: number;
-}
+} & Goal;
 
-export interface PartialGoal {
+export type UnprocessedGoal = {
   id: string;
-  topic: string;
-  description: string;
-  importance: 0 | 1 | 2;
-  keywords: string[];
-  obstacles: string[];
   meta: {
     score?: Score;
     context?: string;
   };
-  children: Array<Goal>;
+  children: [];
   depth: number;
-}
+} & Goal;
 
 export interface Score {
   priority: number;
