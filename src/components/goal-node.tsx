@@ -37,6 +37,7 @@ const GoalNode = ({
   const status = useTreeStatusStore(selectGoalStatus(id));
   const { push } = useRouter();
   const path = usePathname();
+  const threshold = 4;
 
   return (
     <Link
@@ -68,14 +69,18 @@ const GoalNode = ({
       <div
         className={clsx(
           "absolute p-1 text-xs uppercase  border  rounded-lg right-1 rotate-12 text-yellow-950 -top-2",
-          importance > 1
+          importance > threshold + 3
             ? "bg-yellow-200 border-yellow-500"
-            : importance === 1
-            ? "bg-lime-200 border-lime-500"
-            : "bg-neutral-200 border-neutral-500"
+            : importance < threshold
+            ? "bg-neutral-200 border-neutral-500"
+            : "bg-lime-200 border-lime-500"
         )}
       >
-        {importance > 1 ? "High" : importance === 1 ? "Medium" : "Low"}
+        {importance > threshold + 3
+          ? "High"
+          : importance === threshold
+          ? "Medium"
+          : "Low"}
       </div>
       <header className="grid px-3 py-2 font-mono uppercase border-b place-items-center font-meduim border-gray-light-secondary">
         {label}

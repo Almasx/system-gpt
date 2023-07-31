@@ -145,7 +145,7 @@ export const generate_subgoals = {
       subgoals: {
         type: "array",
         description:
-          "List of subgoals generated from the main goal, context. Length depend on NUMBER_OF_SUBGOALS",
+          "List of actionable and distinct subgoals generated accounting (but MAX_NUMBER_OF_SUBGOALS more) context. keep in mind original goal. <= THAN MAX_NUMBER_OF_SUBGOALS",
         items: {
           type: "object",
           properties: {
@@ -161,7 +161,7 @@ export const generate_subgoals = {
             importance: {
               type: "number",
               description:
-                "Importance of the topic or entity in the context of the goal 0 - Low, 1 - Medium, 2 - High",
+                "Importance of the topic or entity in the context of the goal (1-10)",
             },
             keywords: {
               type: "array",
@@ -244,7 +244,7 @@ export const system_prompts = {
 
   generate_subgoals: {
     message:
-      "AI, now you have all the necessary inputs to generate sub goals for the main goal. Use the goal's context and any resources found to create relevant sub goals that will assist the user in achieving their goal. Remember to ensure each sub goal is specific, measurable, achievable, relevant, and time-bound. The number of sub goals is dependent on NUMBER_OF_SUBGOALS",
+      "AI, now you have all the necessary inputs to generate actionable and distinct subgoals for the main goal. Use the goal's context and any resources found to create relevant subgoals that will assist the user in achieving their goal. Each subgoal should be specific, measurable, achievable, relevant, and time-bound (SMART). Moreover, each subgoal should include a clear action step that the user can take towards achieving it. The number of sub goals is less or equal MAX_NUMBER_OF_SUBGOALS. If context can be divided to more than that number compromise.       ",
     model: "gpt-3.5-turbo-16k",
     temperature: 1.4,
   },
