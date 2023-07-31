@@ -2,8 +2,8 @@ import { Day, EventUI } from "~/components/calendar";
 import {
   BASE,
   COMPLEXITY_WEIGHT,
-  PRIORITY_WEIGHT,
   RELEVANCE_WEIGHT,
+  SIGNIFICANCE_WEIGHT,
   THRESHOLD,
 } from "./constants";
 
@@ -149,7 +149,7 @@ export const calculateChildren = (
   depth: number
 ) => {
   const score =
-    PRIORITY_WEIGHT * priority * 0.1 +
+    SIGNIFICANCE_WEIGHT * priority * 0.1 +
     RELEVANCE_WEIGHT * relevance * 0.1 +
     COMPLEXITY_WEIGHT * complexity * 0.1;
   const discount_factor = BASE ** depth;

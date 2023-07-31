@@ -183,7 +183,7 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
 
       generateSubgoalsService: async (context): Promise<UnprocessedGoal[]> => {
         const numberChildren = calculateChildren(
-          context.meta.score!.priority,
+          context.meta.score!.significance,
           context.meta.score!.relevance,
           context.meta.score!.complexity,
           context.depth!

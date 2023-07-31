@@ -44,7 +44,7 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
         },
         onDone: [
           {
-            // target: "checkStack",
+            target: "checkStack",
             cond: (_ctx, event) => event.data.state === "generating",
             actions: [
               assign((context, event) => {
@@ -54,17 +54,18 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
                 const edgeStack = [];
                 while (persistedStack.length) {
                   const current = persistedStack.pop() as PersistedGoal;
-                  if (!current.processed) {
+                  if (current.processed === false) {
                     if (!current.path) {
                       console.log(current);
                       continue;
                     }
+
                     unprocessedGoalStack.push({
                       ...current,
                       depth: current.path.split("children").length,
                       meta: {
                         score: {
-                          priority: 0,
+                          significance: 0,
                           relevance: 0,
                           complexity: 0,
                         },

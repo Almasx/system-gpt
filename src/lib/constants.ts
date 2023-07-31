@@ -107,7 +107,7 @@ export const extract_root = {
 export const score_goal = {
   name: "score_goal",
   description:
-    "Calculate the score of a goal based on priority, relevance, and complexity",
+    "Calculate the score of a goal based on significance, relevance, and complexity",
   parameters: {
     type: "object",
     properties: {
@@ -115,9 +115,9 @@ export const score_goal = {
         type: "object",
         description: "The goal to be scored",
         properties: {
-          priority: {
+          significance: {
             type: "integer",
-            description: "Priority of the goal (1-10)",
+            description: "Significance of the goal (1-10)",
           },
           relevance: {
             type: "integer",
@@ -129,7 +129,7 @@ export const score_goal = {
               "Complexity of the goal, based on the number of subgoals (1-10)",
           },
         },
-        required: ["priority", "relevance", "complexity"],
+        required: ["significance", "relevance", "complexity"],
       },
     },
     required: ["goal"],
@@ -228,6 +228,62 @@ export const search_resources = {
   },
 };
 
+export const create_action = {
+  type: "object",
+  name: "create_goal",
+  description: "generate a goal",
+  parameters: {
+    type: "object",
+    properties: {
+      title: {
+        type: "string",
+        description: "Brief summary of the goal",
+      },
+      description: {
+        type: "string",
+        description: "Detailed explanation of the goal",
+      },
+      priority: {
+        type: "number",
+        description: "Priority level of the goal (1-10)",
+      },
+      prerequisites: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+        description: "List of prerequisites for the goal",
+      },
+      effort: {
+        type: "object",
+        description: "Estimated effort to achieve the goal",
+        properties: {
+          score: {
+            type: "number",
+            description: "Effort score from (1-10)",
+          },
+          storyPoints: {
+            type: "number",
+            description:
+              "Effort estimate using the Scrum methodology's story points",
+          },
+          complexity: {
+            type: "number",
+            description: "Estimate of the complexity of the task",
+          },
+          estimatedDuration: {
+            type: "number",
+            description:
+              "Estimated time or effort to complete the goal in hours",
+          },
+        },
+        required: ["score", "storyPoints", "complexity", "estimatedDuration"],
+      },
+    },
+    required: ["title", "priority", "description", "effort", "prerequisites"],
+  },
+};
+
 export const system_prompts = {
   goal_conversation: {
     message: `The following is an informative conversation between a human and an AI goal adviser. AI goal adviser will really try to think out of box. Given user's goal AI advices will try to to develop very specific, achievable goals that subscribes to the SMART goals method with user. The goal adviser will ask lots of questions. The goal adviser will attempt to answer any question asked and will always probe for the human's appetite and goals by asking questions of its own. If the human's appetite is low it will offer conservative goal advice, if the appetite of the human is higher it will offer more aggressive
@@ -251,7 +307,7 @@ export const system_prompts = {
 
   calculate_score: {
     message:
-      "AI, now that you have the goal and its context, assess its priority, relevance, and complexity. Remember to consider the context you extracted and how these factors could affect the direction and difficulty of the goal.",
+      "AI, now that you have the goal and its context, assess its significance, relevance, and complexity. Remember to consider the context you extracted and how these factors could affect the direction and difficulty of the goal.",
     model: "gpt-3.5-turbo-0613",
     temperature: 0.7,
   },
@@ -262,6 +318,7 @@ export const system_prompts = {
     model: "gpt-3.5-turbo-0613",
     temperature: 0.7,
   },
+
   extract_context: {
     message:
       "AI, take the user's goal and extract generate key concepts and entities that will be relevant for generating sub goals. Consider factors such as the subject matter, scope, timeframes, and any specific tasks or skills mentioned.",
@@ -269,13 +326,20 @@ export const system_prompts = {
     model: "gpt-3.5-turbo-16k",
     temperature: 1.4,
   },
+
+  create_action: {
+    message:
+      "AI, based on the user's needs and interests, create a new, specific, and achievable goal that adheres to the SMART goal method. This goal should serve as a structured target for the user's learning or project planning, facilitating the creation of a sequential, manageable task schedule.",
+    model: "gpt-3.5-turbo",
+    temperature: 1.3,
+  },
 } as const;
 
 export const THRESHOLD = 0.1; // for children
 export const MAX_DEPTH = 5;
 export const BASE = Math.pow(THRESHOLD, 1 / MAX_DEPTH); // or discount_factor  Math.pow((THRESHOLD / INITIAL_SCORE), (1/MAX_DEPTH)); const MAX_DEPTH = 5;
-export const PRIORITY_WEIGHT = 0.1; // Weight for Priority
-export const RELEVANCE_WEIGHT = 0.4; // Weight for Relevance
-export const COMPLEXITY_WEIGHT = 0.5; // Weight for Complexity
+export const SIGNIFICANCE_WEIGHT = 0.3; // Weight for Significance
+export const RELEVANCE_WEIGHT = 0.1; // Weight for Relevance
+export const COMPLEXITY_WEIGHT = 0.6; // Weight for Complexity
 export const COST_PER_NODE = 0.002; //$
 // const MAX_TOTAL_NODES = Math.floor(BUDGET / COST_PER_NODE);

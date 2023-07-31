@@ -51,14 +51,14 @@ export type UnprocessedGoal = {
 } & Goal;
 
 export interface Score {
-  priority: number;
+  significance: number;
   relevance: number;
   complexity: number;
 }
 
 export const scoreShema = z.object({
   goal: z.object({
-    priority: z.number(),
+    significance: z.number(),
     relevance: z.number(),
     complexity: z.number(),
   }),

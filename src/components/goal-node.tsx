@@ -71,8 +71,8 @@ const GoalNode = ({
           importance > 6
             ? "bg-yellow-200 border-yellow-500"
             : importance < 4
-            ? "bg-neutral-200 border-neutral-500"
-            : "bg-lime-200 border-lime-500"
+            ? "bg-lime-200 border-lime-500"
+            : "bg-neutral-200 border-neutral-500"
         )}
       >
         {importance > 6 ? "High" : importance < 4 ? "Medium" : "Low"}
