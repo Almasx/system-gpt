@@ -28,6 +28,7 @@ export type GoalEvents = {
 export type GoalContext = UnprocessedGoal & {
   statusUpdate: UpdateGoalStatus;
   journeyId: string;
+  rootDescription: string;
 };
 
 export const goalMachine = createMachine<GoalContext, GoalEvents>(
@@ -133,6 +134,8 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
         ${context.obstacles
           ?.map((hurdle, index) => `${index + 1}. ${hurdle}`)
           .join("\n")}
+
+        Remember original goal was: """${context.rootDescription}"""
         
         Remember, the importance of this goal is "${
           context.importance
@@ -185,9 +188,16 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
           context.meta.score!.complexity,
           context.depth!
         );
-        const prompt = `NUMBER_OF_SUBGOALS=${numberChildren}
+        const prompt = `MAX_NUMBER_OF_SUBGOALS=${numberChildren}. Remember If context can be divided to more than that number compromise.
+
+        remember original goal was: """${context.rootDescription}"""
         
-        Context: ${context.meta.context}`;
+        User Context (REMEMBER MAX_NUMBER_OF_SUBGOALS): """${context.meta.context}"""
+        
+        REMEMBER MAX_NUMBER_OF_SUBGOALS=${numberChildren}
+        You have to not exceed it (<=)
+
+        remember original goal`;
 
         console.log(prompt);
         const subgoalsRaw = await openaiFunctions(

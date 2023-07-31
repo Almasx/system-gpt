@@ -62,6 +62,7 @@ const GoalFlow = ({ journeyId }: { journeyId: string }) => {
             set: setEdges,
           },
         },
+        rootDescription: null,
       })}
     >
       <ReactFlow

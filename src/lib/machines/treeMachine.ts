@@ -22,6 +22,7 @@ interface TreeContext {
     };
   };
   onGenerate: () => void;
+  rootDescription: string | null;
 }
 
 type TreeEvent =
@@ -36,6 +37,7 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
       invoke: {
         src: async (context) => {
           const rootNodeData = await getRootNode(context.journeyId);
+
           if (rootNodeData.state !== "not found") {
             return rootNodeData;
           }
@@ -119,6 +121,7 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
                 return {
                   ...context,
                   stack: context.stack.concat(unprocessedGoalStack),
+                  rootDescription: event.data.tree.description,
                 };
               }),
             ],
@@ -149,6 +152,7 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
                 return {
                   ...context,
                   stack: context.stack.concat(event.data.tree),
+                  rootDescription: event.data.tree.description,
                 };
               }),
             ],
@@ -177,6 +181,7 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
           statusUpdate: useTreeStatusStore.getState().updateGoalStatus,
           ...(context.currentGoal as UnprocessedGoal),
           journeyId: context.journeyId,
+          rootDescription: context.rootDescription!,
         }),
         onDone: {
           target: "checkStack",

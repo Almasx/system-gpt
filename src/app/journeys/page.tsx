@@ -56,23 +56,24 @@ export default async function Journeys() {
 
 export const GoalCard = async ({ journeyId }: { journeyId: string }) => {
   console.log(journeyId);
-  const journey = await redis.json.get(journeyId);
-  if (journey) {
-    return (
-      <Link
-        href={`/journeys/${journey.id}/chat`}
-        className="flex flex-col border divide-y backdrop-blur rounded-xl border-gray-light-secondary divide-gray-light-secondary overflow-clip"
-      >
-        <header className="grid p-3 place-items-center bg-white/80">
-          {journey.title || "No title yet..."}
-        </header>
-        <p className="p-4 text-sm bg-light-secondary/80">
-          {journey.description ||
-            `The journey of a thousand miles begins with a single click!
+  const title = await redis.json.get(journeyId, "$.title");
+  const description = await redis.json.get(journeyId, "$.description");
+  console.log(title, description);
+
+  return (
+    <Link
+      href={`/journeys/${journeyId.split(":").at(-1)}/chat`}
+      className="flex flex-col border divide-y backdrop-blur rounded-xl border-gray-light-secondary divide-gray-light-secondary overflow-clip"
+    >
+      <header className="grid p-3 place-items-center bg-white/80">
+        {title || "No title yet..."}
+      </header>
+      <p className="p-4 text-sm bg-light-secondary/80">
+        {description ||
+          `The journey of a thousand miles begins with a single click!
              Click the it to work on your journey and let your goals to be crushed.
              Your story awaits, and we can't wait to be a part of it!`}
-        </p>
-      </Link>
-    );
-  }
+      </p>
+    </Link>
+  );
 };
