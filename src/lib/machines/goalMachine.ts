@@ -168,8 +168,8 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
             { role: "system", content: system_prompts.message_enrich.message },
             {
               role: "user",
-              content:
-                "Calculate the score for the goal: " + context.meta?.context,
+              content: `Calculate the score for the goal: """${context.meta?.context}"""
+                 You can account relevance by root goal: """${context.rootDescription}"""`,
             },
           ],
           [score_goal],
