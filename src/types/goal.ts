@@ -3,7 +3,7 @@ import { z } from "zod";
 export type Goal = {
   topic: string;
   description: string;
-  importance: 0 | 1 | 2;
+  importance: number;
   keywords: string[];
   obstacles: string[];
 };

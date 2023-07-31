@@ -75,7 +75,7 @@ export const extract_root = {
       },
       goal_importance: {
         type: "number",
-        description: "Importance of the goal (0-2)",
+        description: "Importance of the goal (1-10)",
       },
       goal_keywords: {
         type: "array",

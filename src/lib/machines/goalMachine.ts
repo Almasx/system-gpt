@@ -215,7 +215,7 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
             path: `${context.path}.children.${id}`,
             topic: subgoal.sub_goal,
             description: subgoal.sub_goal_content,
-            importance: subgoal.importance as 0 | 1 | 2,
+            importance: subgoal.importance as number,
             meta: {},
             children: [],
             id,

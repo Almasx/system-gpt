@@ -170,7 +170,7 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
                 id: goalId,
                 description: rootGoal.goal_content,
                 topic: rootGoal.goal_topic,
-                importance: rootGoal.goal_importance as 0 | 1 | 2,
+                importance: rootGoal.goal_importance as number,
                 obstacles: rootGoal.goal_obstacles,
                 keywords: rootGoal.goal_keywords,
                 path: goalId,
