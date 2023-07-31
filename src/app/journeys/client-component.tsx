@@ -12,7 +12,7 @@ export const CreateJourney = ({ userId }: { userId: string }) => {
   const { mutate, isLoading, data: id } = useZact(create);
 
   useEffect(() => {
-    id && push(`/journeys/${id}`);
+    id && push(`/journeys/${id}/chat`);
   }, [id, push]);
 
   return (

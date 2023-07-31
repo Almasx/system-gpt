@@ -1,20 +1,14 @@
+import { usePathname, useRouter } from "next/navigation";
 import { Handle, NodeProps, Position } from "reactflow";
 import {
   ServiceStatus,
   selectGoalStatus,
-  useTreeStore,
-} from "~/lib/hooks/useTree";
+  useTreeStatusStore,
+} from "~/lib/hooks/useTreeStatus";
 
 import clsx from "clsx";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-
-type GoalNodeData = {
-  label: string;
-  keywords: string[];
-  description: string;
-};
 
 const statusMap: Record<
   Extract<
@@ -28,20 +22,26 @@ const statusMap: Record<
   messageEnrich: "Enriching context...",
 };
 
+type GoalNodeData = {
+  label: string;
+  keywords: string[];
+  description: string;
+  importance: number;
+};
+
 const GoalNode = ({
-  data: { label, keywords, description },
+  data: { label, keywords, description, importance },
   id,
   selected,
 }: NodeProps<GoalNodeData>) => {
-  const [toggle, setToggle] = useState<boolean>(false);
-  const status = useTreeStore(selectGoalStatus(id));
+  const status = useTreeStatusStore(selectGoalStatus(id));
+  const { push } = useRouter();
+  const path = usePathname();
 
   return (
     <Link
-      href={toggle ? `/tree/new/` : `/tree/new/goal/${id}`}
-      onClick={() => {
-        setToggle((toggle) => !toggle);
-      }}
+      href={path.includes("goal") ? `` : `tree/goal/${id}`}
+      onClick={() => {}}
       className={clsx(
         "relative flex flex-col bg-white border rounded-xl w-96 duration-150",
         selected
@@ -65,8 +65,17 @@ const GoalNode = ({
           </div>
         )}
 
-      <div className="absolute p-1 text-xs uppercase bg-yellow-200 border border-yellow-500 rounded-lg right-1 rotate-12 text-yellow-950 -top-2">
-        High
+      <div
+        className={clsx(
+          "absolute p-1 text-xs uppercase  border  rounded-lg right-1 rotate-12 text-yellow-950 -top-2",
+          importance > 1
+            ? "bg-yellow-200 border-yellow-500"
+            : importance === 1
+            ? "bg-lime-200 border-lime-500"
+            : "bg-neutral-200 border-neutral-500"
+        )}
+      >
+        {importance > 1 ? "High" : importance === 1 ? "Medium" : "Low"}
       </div>
       <header className="grid px-3 py-2 font-mono uppercase border-b place-items-center font-meduim border-gray-light-secondary">
         {label}
@@ -75,7 +84,7 @@ const GoalNode = ({
         {description}
       </div>
       <div className="flex gap-3 px-3 py-2 pb-2.5 overflow-x-auto hide-scrollbar nodrag">
-        {keywords.map((keyword) => (
+        {keywords?.map((keyword) => (
           <div
             className="p-1 text-xs uppercase border rounded-lg bg-light-secondary border-gray-light-secondary whitespace-nowrap"
             key={`${id}-${keyword}`}

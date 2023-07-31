@@ -11,14 +11,24 @@ import {
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Prompt } from "next/font/google";
-import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { AutoAnimate } from "~/components/auto-animate";
 import Chat from "~/components/chat";
+import { ChatProvider } from "~/components/providers";
 import { Modal } from "~/components/ui/modal";
 import TextAreaField from "~/components/ui/text-area";
 import TextField from "~/components/ui/text-field";
 import { ChatMachineContext } from "~/lib/machines/chatMachine";
+
+export default function SystemGeneratorWrapper(props: {
+  params: { journeyId: string };
+}) {
+  return (
+    <ChatProvider journeyId={props.params.journeyId}>
+      <SystemGenerator />
+    </ChatProvider>
+  );
+}
 
 const promptSchema = z.object({
   goal: z.string(),
@@ -28,7 +38,7 @@ const promptSchema = z.object({
 
 type Prompt = z.infer<typeof promptSchema>;
 
-export default function SystemGenerator() {
+export function SystemGenerator() {
   const methods = useForm<Prompt>({
     resolver: zodResolver(promptSchema),
   });
@@ -99,8 +109,6 @@ const Form = () => {
     (state) => state.context.user.topic
   );
 
-  const { push } = useRouter();
-
   const onSubmit: SubmitHandler<Prompt> = useCallback(
     ({ user, goal, context }) => {
       setTimeout(() => {
@@ -111,12 +119,9 @@ const Form = () => {
         type: "SET_GOAL",
         goal: `User: 'is ${user}'. Context: '${context}'. Goal: '${goal}'`,
         topic: goal,
-        onGoal: () => {
-          push("/tree/new");
-        },
       });
     },
-    [actorRef, push]
+    [actorRef]
   );
 
   if (changeInterface || !idle) {

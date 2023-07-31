@@ -1,13 +1,12 @@
-import { TreeProvider } from "~/components/providers";
-
 export default async function Layout(props: {
   children: React.ReactNode;
   goal: React.ReactNode;
+  params: { journeyId: string };
 }) {
   return (
-    <TreeProvider>
+    <>
       {props.children}
       {props.goal}
-    </TreeProvider>
+    </>
   );
 }

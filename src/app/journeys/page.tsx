@@ -1,8 +1,8 @@
 import { auth } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { redis } from "~/lib/services/redis";
-import { Journey } from "~/types/journey";
 import Line from "../../../public/line.svg";
 import { CreateJourney } from "./client-component";
 
@@ -17,8 +17,6 @@ export default async function Journeys() {
       rev: true,
     }
   );
-
-  console.log(journeysId);
 
   if (!journeysId.length) {
     return (
@@ -36,13 +34,6 @@ export default async function Journeys() {
     );
   }
 
-  const pipeline = redis.pipeline();
-  for (const journeyId of journeysId) {
-    pipeline.json.get(journeyId);
-  }
-
-  const journeys: Journey[] = await pipeline.exec();
-
   return (
     <main className="relative flex flex-col items-center h-screen gap-5 overflow-clip">
       <div className="w-[1024px] py-32 z-10">
@@ -51,8 +42,10 @@ export default async function Journeys() {
           <CreateJourney userId={userId!} />
         </div>
         <div className="grid grid-cols-3 gap-5">
-          {journeys.map((journey) => (
-            <GoalCard key={journey.id} journey={journey} />
+          {journeysId.map((journeyId) => (
+            <Suspense key={journeyId} fallback={"Loading..."}>
+              <GoalCard journeyId={journeyId} />
+            </Suspense>
           ))}
         </div>
       </div>
@@ -61,21 +54,25 @@ export default async function Journeys() {
   );
 }
 
-export const GoalCard = ({ journey }: { journey: Journey }) => {
-  return (
-    <Link
-      href={`journeys/${journey.id}`}
-      className="flex flex-col border divide-y backdrop-blur rounded-xl border-gray-light-secondary divide-gray-light-secondary overflow-clip"
-    >
-      <header className="grid p-3 place-items-center bg-white/80">
-        {journey.title || "No title yet..."}
-      </header>
-      <p className="p-4 text-sm bg-light-secondary/80">
-        {journey.description ||
-          `The journey of a thousand miles begins with a single click!
-           Click the it to work on your journey and let your goals to be crushed.
-           Your story awaits, and we can't wait to be a part of it!`}
-      </p>
-    </Link>
-  );
+export const GoalCard = async ({ journeyId }: { journeyId: string }) => {
+  console.log(journeyId);
+  const journey = await redis.json.get(journeyId);
+  if (journey) {
+    return (
+      <Link
+        href={`/journeys/${journey.id}/chat`}
+        className="flex flex-col border divide-y backdrop-blur rounded-xl border-gray-light-secondary divide-gray-light-secondary overflow-clip"
+      >
+        <header className="grid p-3 place-items-center bg-white/80">
+          {journey.title || "No title yet..."}
+        </header>
+        <p className="p-4 text-sm bg-light-secondary/80">
+          {journey.description ||
+            `The journey of a thousand miles begins with a single click!
+             Click the it to work on your journey and let your goals to be crushed.
+             Your story awaits, and we can't wait to be a part of it!`}
+        </p>
+      </Link>
+    );
+  }
 };

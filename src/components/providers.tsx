@@ -2,25 +2,25 @@
 
 import { ChatMachineContext, chatMachine } from "~/lib/machines/chatMachine";
 
-import { ReactFlowProvider } from "reactflow";
+import { useRouter } from "next/navigation";
 import { system_prompts } from "~/lib/constants";
-import { TreeMachineContext } from "~/lib/machines/treeMachine";
 
-export const ChatProvider = ({
-  children,
-  journeyId,
-}: {
+interface StateProviders {
   children: React.ReactNode;
   journeyId: string;
-}) => {
+}
+
+export const ChatProvider = ({ children, journeyId }: StateProviders) => {
+  const { push } = useRouter();
   return (
     <ChatMachineContext.Provider
       machine={chatMachine.withContext({
         user: {
           topic: null,
-          onGoal: null,
+          onGoal: () => {
+            push(`/journeys/${journeyId}/tree/`);
+          },
         },
-        goal: null,
         chatHistory: [
           { role: "system", content: system_prompts.goal_conversation.message },
         ],
@@ -30,12 +30,5 @@ export const ChatProvider = ({
     >
       {children}
     </ChatMachineContext.Provider>
-  );
-};
-export const TreeProvider = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <TreeMachineContext.Provider>
-      <ReactFlowProvider>{children}</ReactFlowProvider>
-    </TreeMachineContext.Provider>
   );
 };

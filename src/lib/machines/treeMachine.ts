@@ -1,52 +1,159 @@
+import { Edge, Instance, Node } from "reactflow";
 import { assign, createMachine } from "xstate";
-import { ProcessedGoal, UnprocessedGoal } from "~/types/goal";
-import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
+import { PersistedGoal, ProcessedGoal, UnprocessedGoal } from "~/types/goal";
+import { GoalContext, goalMachine } from "./goalMachine";
 
 import { createActorContext } from "@xstate/react";
-import { goalMachine } from "./goalMachine";
+import { getRootNode } from "~/app/journeys/[journeyId]/stages.actions";
+import { useTreeStatusStore } from "../hooks/useTreeStatus";
+import { calculateSubnodePosition } from "../utils";
 
 interface TreeContext {
   stack: Array<UnprocessedGoal>;
   currentGoal: UnprocessedGoal | null;
-  // resources: Array<Resource>;
-  onGenerate: null | ((goal: ProcessedGoal) => void);
-  onUpdate: UpdateGoal | null;
-  onStatusUpdate: UpdateGoalStatus | null;
+  journeyId: string;
+  ui: {
+    node: {
+      get: Instance.GetNode<any>;
+      set: Instance.SetNodes<any>;
+    };
+    edge: {
+      set: Instance.SetEdges<any>;
+    };
+  };
+  onGenerate: () => void;
 }
 
 type TreeEvent =
-  | {
-      type: "START";
-      goal: UnprocessedGoal;
-      onGenerate: (goal: ProcessedGoal) => void;
-      onStatusUpdate: UpdateGoalStatus;
-      onUpdate: UpdateGoal;
-    }
   | { type: "SUBGOALS_GENERATED"; goal: ProcessedGoal }
   | { type: "INTERRUPT" };
 
 export const treeMachine = createMachine<TreeContext, TreeEvent>({
   predictableActionArguments: true,
   initial: "idle",
-  context: {
-    stack: [],
-    onGenerate: null,
-    onUpdate: null,
-    onStatusUpdate: null,
-    currentGoal: null,
-  },
   states: {
     idle: {
-      on: {
-        START: {
-          target: "checkStack",
-          actions: assign((_, event) => ({
-            onGenerate: event.onGenerate,
-            onUpdate: event.onUpdate,
-            onStatusUpdate: event.onStatusUpdate,
-            stack: [event.goal],
-          })),
+      invoke: {
+        src: async (context) => {
+          const rootNodeData = await getRootNode(context.journeyId);
+          if (rootNodeData.state !== "not found") {
+            return rootNodeData;
+          }
         },
+        onDone: [
+          {
+            // target: "checkStack",
+            cond: (_ctx, event) => event.data.state === "generating",
+            actions: [
+              assign((context, event) => {
+                const persistedStack: PersistedGoal[] = [event.data.tree];
+                const unprocessedGoalStack: UnprocessedGoal[] = [];
+
+                const edgeStack = [];
+                while (persistedStack.length) {
+                  const current = persistedStack.pop() as PersistedGoal;
+                  if (!current.processed) {
+                    if (!current.path) {
+                      console.log(current);
+                      continue;
+                    }
+                    unprocessedGoalStack.push({
+                      ...current,
+                      depth: current.path.split("children").length,
+                      meta: {
+                        score: {
+                          priority: 0,
+                          relevance: 0,
+                          complexity: 0,
+                        },
+                      },
+                      children: [],
+                    });
+                  }
+
+                  const node: Node = {
+                    id: current.id,
+                    data: {
+                      label: current.topic,
+                      keywords: current.keywords,
+                      description: current.description,
+                      importance: current.importance,
+                    },
+                    position: {
+                      x: Math.random() * 500,
+                      y: Math.random() * 500,
+                    },
+                    type: "goal",
+                  };
+                  context.ui.node.set((nds) => nds.concat(node));
+
+                  const children =
+                    Object.keys(current.children).length > 0
+                      ? (current.children as Record<string, PersistedGoal>)
+                      : null;
+
+                  if (children) {
+                    for (const child of Object.keys(children)) {
+                      edgeStack.push({
+                        parent: current.id,
+                        child: children[child].id,
+                      });
+
+                      persistedStack.push(children[child]);
+                    }
+                  }
+                }
+
+                for (const { parent, child } of edgeStack) {
+                  const edge: Edge = {
+                    id: `${parent}-${child}`,
+                    source: parent,
+                    target: child,
+                  };
+
+                  context.ui.edge.set((edges) => edges.concat(edge));
+                }
+
+                context.onGenerate();
+
+                return {
+                  ...context,
+                  stack: context.stack.concat(unprocessedGoalStack),
+                };
+              }),
+            ],
+          },
+
+          {
+            target: "checkStack",
+            cond: (_ctx, event) => event.data.state === "root",
+            actions: [
+              (context, event) => {
+                const node: Node = {
+                  id: event.data.tree.id,
+                  data: {
+                    label: event.data.tree.topic,
+                    keywords: event.data.tree.keywords,
+                    description: event.data.tree.description,
+                    importance: event.data.tree.importance,
+                  },
+                  position: {
+                    x: 500,
+                    y: 500,
+                  },
+                  type: "goal",
+                };
+                context.ui.node.set((nds) => nds.concat(node));
+              },
+              assign((context, event) => {
+                return {
+                  ...context,
+                  stack: context.stack.concat(event.data.tree),
+                };
+              }),
+            ],
+          },
+        ],
       },
     },
 
@@ -66,20 +173,55 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
       invoke: {
         id: "goalMachine",
         src: goalMachine,
-        data: (context) => ({
-          update: context.onUpdate,
-          statusUpdate: context.onStatusUpdate,
-          ...context.currentGoal,
+        data: (context): GoalContext => ({
+          statusUpdate: useTreeStatusStore.getState().updateGoalStatus,
+          ...(context.currentGoal as UnprocessedGoal),
+          journeyId: context.journeyId,
         }),
         onDone: {
           target: "checkStack",
-          actions: assign((context, event) => {
-            context.onGenerate?.call(context.onGenerate, event.data.goal);
-            return {
-              ...context,
-              stack: context.stack.concat(event.data.goal.children),
-            };
-          }),
+          actions: [
+            (context, event) => {
+              const goal = event.data.goal;
+              const childPosition = calculateSubnodePosition(
+                context.ui.node.get(goal.id)!.position,
+                goal.children.length
+              );
+
+              for (let i = 0; i < goal.children.length; i++) {
+                const child = goal.children[i];
+
+                useTreeStatusStore.getState().addGoal(child);
+
+                const node: Node = {
+                  id: child.id,
+                  data: {
+                    label: child.topic,
+                    keywords: child.keywords,
+                    description: child.description,
+                    importance: child.importance,
+                  },
+                  position: childPosition[i],
+                  type: "goal",
+                };
+                context.ui.node.set((nds) => nds.concat(node));
+
+                const edge: Edge = {
+                  id: `${goal.id}-${child.id}`,
+                  source: goal.id,
+                  target: child.id,
+                };
+                context.ui.edge.set((edges) => edges.concat(edge));
+              }
+              context.onGenerate();
+            },
+            assign((context, event) => {
+              return {
+                ...context,
+                stack: context.stack.concat(event.data.goal.children),
+              };
+            }),
+          ],
         },
       },
     },

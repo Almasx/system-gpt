@@ -2,28 +2,24 @@ import { assign, createMachine, raise } from "xstate";
 import { openaiChat, openaiFunctions } from "~/app/api.actions";
 import {
   getRootGoalMessages,
+  patchRootNodeDescription,
   saveRootGoalMessage,
-} from "~/app/journeys/[journeyId]/goal.actions";
+  saveTreeNode,
+} from "~/app/journeys/[journeyId]/stages.actions";
+import { PersistedGoal, rootGoalSchema } from "~/types/goal";
 import { extract_root, system_prompts } from "../constants";
 
 import { createActorContext } from "@xstate/react";
 import { patchTitle } from "~/app/journeys/journey.actions";
-import { rootGoalSchema } from "~/types/goal";
 import { OpenAIMessage } from "~/types/message";
+import { nanoid } from "../utils";
 
 interface ChatContext {
-  journeyId: string | null;
+  journeyId: string;
   chatHistory: OpenAIMessage[];
-  goal: {
-    topic: string;
-    description: string;
-    importance: 0 | 1 | 2;
-    keywords: string[];
-    obstacles: string[];
-  } | null;
   user: {
     topic: string | null;
-    onGoal: ((rootGoal: any) => void) | null;
+    onGoal: () => void;
   };
   message: string | null;
 }
@@ -33,7 +29,6 @@ type ChatEvents =
       type: "SET_GOAL";
       goal: string;
       topic: string;
-      onGoal: (rootGoal: any) => void;
     }
   | {
       type: "REFACTOR_GOAL";
@@ -47,18 +42,7 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
   predictableActionArguments: true,
   id: "chat",
   type: "parallel",
-  context: {
-    journeyId: null,
-    user: {
-      topic: null,
-      onGoal: null,
-    },
-    goal: null,
-    chatHistory: [
-      { role: "system", content: system_prompts.goal_conversation.message },
-    ],
-    message: null,
-  },
+
   states: {
     serviceStatus: {
       id: "serviceStatus",
@@ -75,7 +59,7 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
         checkDB: {
           invoke: {
             src: async (context) =>
-              await getRootGoalMessages(context.journeyId!),
+              await getRootGoalMessages(context.journeyId),
             onDone: [
               {
                 target: "idle",
@@ -104,29 +88,25 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
               actions: [
                 async (context, event) => {
                   await patchTitle({
-                    journeyId: context.journeyId!,
+                    journeyId: context.journeyId,
                     title: event.topic,
-                  });
-
-                  assign({
-                    user: {
-                      ...context.user,
-                      topic: event.topic,
-                      onGoal: event.onGoal,
-                    },
                   });
                 },
                 async (context, event) => {
-                  await saveRootGoalMessage(context.journeyId!, {
+                  await saveRootGoalMessage(context.journeyId, {
                     role: "system",
                     content: system_prompts.goal_conversation.message,
                   });
-                  await saveRootGoalMessage(context.journeyId!, {
+                  await saveRootGoalMessage(context.journeyId, {
                     role: "user",
                     content: event.goal,
                   });
                 },
                 assign({
+                  user: (context, event) => ({
+                    ...context.user,
+                    topic: event.topic,
+                  }),
                   chatHistory: (context, event) => [
                     ...context.chatHistory,
                     {
@@ -156,7 +136,7 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
               target: "waitingForMessage",
               actions: [
                 async (context, event) => {
-                  await saveRootGoalMessage(context.journeyId!, event.data);
+                  await saveRootGoalMessage(context.journeyId, event.data);
                 },
                 assign({
                   chatHistory: (context, event) => [
@@ -170,7 +150,7 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
             onError: {
               target: "#chat.serviceStatus.error",
               actions: assign({
-                message: (context, event) => event.data.message,
+                message: (_ctx, event) => event.data.message,
               }),
             },
           },
@@ -185,25 +165,30 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
               );
 
               const rootGoal = rootGoalSchema.parse(JSON.parse(rootGoalRaw));
-              console.log(rootGoal);
+              const goalId = nanoid();
+              const goal: PersistedGoal = {
+                id: goalId,
+                description: rootGoal.goal_content,
+                topic: rootGoal.goal_topic,
+                importance: rootGoal.goal_importance as 0 | 1 | 2,
+                obstacles: rootGoal.goal_obstacles,
+                keywords: rootGoal.goal_keywords,
+                path: goalId,
+                meta: { score: null, context: null },
+                processed: false,
+                children: {},
+                depth: 1,
+              };
 
-              return rootGoal;
+              await patchRootNodeDescription(
+                context.journeyId,
+                rootGoal.goal_content
+              );
+
+              await saveTreeNode(context.journeyId, goal);
             },
             onDone: {
               target: "done",
-              actions: assign({
-                goal: (context, event) => {
-                  const goal = {
-                    description: event.data.goal_content,
-                    topic: event.data.goal_topic,
-                    importance: event.data.goal_importance,
-                    obstacles: event.data.goal_obstacles,
-                    keywords: event.data.goal_keywords,
-                  };
-                  context.user.onGoal?.call(context.user.onGoal, goal);
-                  return goal;
-                },
-              }),
             },
           },
         },
@@ -219,7 +204,7 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
           target: ".refactorRootGoal",
           actions: [
             async (context, event) => {
-              await saveRootGoalMessage(context.journeyId!, {
+              await saveRootGoalMessage(context.journeyId, {
                 role: "user",
                 content: event.message,
               });

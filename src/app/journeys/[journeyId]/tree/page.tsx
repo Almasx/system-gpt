@@ -8,45 +8,62 @@ import ReactFlow, {
   Controls,
   MiniMap,
   Panel,
+  ReactFlowProvider,
+  useReactFlow,
 } from "reactflow";
+import { TreeMachineContext, treeMachine } from "~/lib/machines/treeMachine";
 
 import clsx from "clsx";
 import { useParams } from "next/navigation";
+import { useCallback } from "react";
 import GoalNode from "~/components/goal-node";
 import { useDagreLayout } from "~/lib/hooks/useDagreLayout";
-import { useStartTree } from "~/lib/hooks/useStartTree";
-import { TreeMachineContext } from "~/lib/machines/treeMachine";
 
-export default function App() {
-  const { id } = useParams();
+export default function App(props: { params: { journeyId: string } }) {
+  const { goalId } = useParams();
 
   return (
     <div
       className={clsx(
         "relative duration-300 rounded-xl rounded-t border border-gray-light-secondary h-[calc(100vh-80px)]",
-        id ? "mr-96 w-[calc(100vw-384px)]  rounded-l" : "w-screen "
+        goalId ? "mr-96 w-[calc(100vw-384px)]  rounded-l" : "w-screen "
       )}
     >
-      <GoalFlow />
+      <ReactFlowProvider>
+        <GoalFlow journeyId={props.params.journeyId} />
+      </ReactFlowProvider>
     </div>
   );
 }
 
 const nodeTypes = { goal: GoalNode };
 
-const GoalFlow = () => {
+const GoalFlow = ({ journeyId }: { journeyId: string }) => {
   const { onLayout } = useDagreLayout();
+  const { setNodes, getNode, setEdges } = useReactFlow();
 
-  useStartTree({
-    layout: () => {
-      onLayout("TB");
-    },
-  });
-
-  const treeRef = TreeMachineContext.useActorRef();
+  const onGenerate = useCallback(() => {
+    onLayout("TB");
+  }, [onLayout]);
 
   return (
-    <>
+    <TreeMachineContext.Provider
+      machine={treeMachine.withContext({
+        stack: [],
+        onGenerate,
+        currentGoal: null,
+        journeyId,
+        ui: {
+          node: {
+            set: setNodes,
+            get: getNode,
+          },
+          edge: {
+            set: setEdges,
+          },
+        },
+      })}
+    >
       <ReactFlow
         fitView
         nodeTypes={nodeTypes}
@@ -56,18 +73,28 @@ const GoalFlow = () => {
         defaultEdges={[]}
         defaultNodes={[]}
       >
-        <Panel position="top-left">
-          <button
-            className="px-4 py-1 bg-white border border-gray-light-secondary rounded-xl"
-            onClick={() => treeRef.send("INTERRUPT")}
-          >
-            Stop
-          </button>
-        </Panel>
+        <Stop />
         <Controls />
         <MiniMap />
         <Background variant={"lines" as BackgroundVariant} gap={12} size={1} />
       </ReactFlow>
-    </>
+    </TreeMachineContext.Provider>
+  );
+};
+
+export const Stop = () => {
+  const treeRef = TreeMachineContext.useActorRef();
+
+  return (
+    <Panel position="top-left">
+      <button
+        className="px-4 py-1 bg-white border border-gray-light-secondary rounded-xl"
+        onClick={() => {
+          treeRef.send({ type: "INTERRUPT" });
+        }}
+      >
+        Stop
+      </button>
+    </Panel>
   );
 };

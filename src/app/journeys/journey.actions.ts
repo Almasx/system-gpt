@@ -18,6 +18,7 @@ export const create = zact(z.object({ userId: z.string() }))(
       description: "",
       stages: {
         goalConversation: [],
+        goalTree: {},
       },
       userId,
       createdAt,
@@ -38,6 +39,9 @@ export const create = zact(z.object({ userId: z.string() }))(
 export const patchTitle = zact(
   z.object({ journeyId: z.string(), title: z.string() })
 )(async ({ journeyId, title }) => {
-  console.log(journeyId, title);
-  await redis.json.set(`journey:${journeyId}`, "$.title", `"${title}"`);
+  await redis.json.set(
+    `journey:${journeyId}`,
+    "$.title",
+    JSON.stringify(title)
+  );
 });

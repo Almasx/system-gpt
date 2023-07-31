@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-type Goal = {
+export type Goal = {
   topic: string;
   description: string;
   importance: 0 | 1 | 2;
@@ -8,23 +8,45 @@ type Goal = {
   obstacles: string[];
 };
 
+export type PersistedGoal = (
+  | {
+      children: Record<string, PersistedGoal>;
+      processed: true;
+      meta: {
+        score: Score;
+        context: string;
+      };
+    }
+  | {
+      children: {};
+      processed: false;
+      meta: {
+        score: null;
+        context: null;
+      };
+    }
+) &
+  Goal & { path: string; id: string; depth: number };
+
 export type ProcessedGoal = {
   id: string;
+  path: string;
   meta: {
     score: Score;
     context: string;
   };
-  children: Array<ProcessedGoal>;
+  children: Array<UnprocessedGoal | ProcessedGoal>;
   depth: number;
 } & Goal;
 
 export type UnprocessedGoal = {
   id: string;
+  path: string;
   meta: {
     score?: Score;
     context?: string;
   };
-  children: [];
+  children: never[];
   depth: number;
 } & Goal;
 

@@ -1,14 +1,21 @@
 import { assign, createMachine } from "xstate";
 import { openaiChat, openaiFunctions } from "~/app/api.actions";
 import {
+  patchTreeNodeContext,
+  patchTreeNodeScore,
+  patchTreeNodeStatus,
+  saveTreeNode,
+} from "~/app/journeys/[journeyId]/stages.actions";
+import {
   Score,
   UnprocessedGoal,
   scoreShema,
   subgoalSchema,
 } from "~/types/goal";
 import { generate_subgoals, score_goal, system_prompts } from "../constants";
-import { UpdateGoal, UpdateGoalStatus } from "../hooks/useTree";
 import { calculateChildren, nanoid } from "../utils";
+
+import { UpdateGoalStatus } from "../hooks/useTreeStatus";
 
 export type GoalEvents = {
   type: "INPUT_GOAL";
@@ -18,51 +25,21 @@ export type GoalEvents = {
   keywords: string[];
 };
 
-export type GoalContext<T extends Record<any, any>> = {
-  [K in keyof T]: T[K] extends Record<any, any>
-    ? GoalContext<T[K]>
-    : T[K] | null;
+export type GoalContext = UnprocessedGoal & {
+  statusUpdate: UpdateGoalStatus;
+  journeyId: string;
 };
 
-export const goalMachine = createMachine<
-  GoalContext<UnprocessedGoal> & {
-    update: null | UpdateGoal;
-    statusUpdate: null | UpdateGoalStatus;
-  },
-  GoalEvents
->(
+export const goalMachine = createMachine<GoalContext, GoalEvents>(
   {
     predictableActionArguments: true,
     id: "goal",
     initial: "messageEnrich",
-    context: {
-      id: null,
 
-      topic: null,
-      description: null,
-      importance: null,
-
-      keywords: [],
-      obstacles: [],
-      depth: 0,
-
-      update: null,
-      statusUpdate: null,
-
-      meta: {
-        context: null,
-        score: null,
-      },
-      children: [],
-    },
     states: {
       messageEnrich: {
         entry: (context) => {
-          context.statusUpdate?.call(
-            context.update,
-            context.id!,
-            "messageEnrich"
-          );
+          context.statusUpdate(context.id, "messageEnrich");
         },
         invoke: {
           src: "messageEnrichService",
@@ -78,82 +55,60 @@ export const goalMachine = createMachine<
           onError: {
             target: "done",
             actions: (context) =>
-              context.statusUpdate?.call(context.update, context.id!, "error"),
+              context.statusUpdate?.call(
+                context.statusUpdate,
+                context.id,
+                "error"
+              ),
           },
         },
       },
-      // extractContext: {
-      //   invoke: {
-      //     src: "extractContextService",
-      //     onDone: {
-      //       target: "calculateScore",
-      //       actions: assign({ meta: (_, event) => event.data }),
-      //     },
-      //   },
-      // },
       calculateScore: {
         entry: (context) => {
-          context.statusUpdate?.call(
-            context.update,
-            context.id!,
-            "calculateScore"
-          );
+          context.statusUpdate(context.id, "calculateScore");
         },
         invoke: {
           src: "calculateScoreService",
           onDone: {
             target: "generateSubgoals",
-            actions: assign({
-              meta: (context, event) => {
-                context.update?.call(context.update, context.id!, {
-                  score: event.data as Score,
-                });
-
-                return {
+            actions: [
+              async (context, event) => {
+                await patchTreeNodeScore(
+                  context.journeyId,
+                  context.path,
+                  event.data as Score
+                );
+              },
+              assign({
+                meta: (context, event) => ({
                   ...context.meta,
                   score: event.data,
-                };
-              },
-            }),
+                }),
+              }),
+            ],
           },
           onError: {
             target: "done",
-            actions: (context) =>
-              context.statusUpdate?.call(context.update, context.id!, "error"),
+            actions: (context) => context.statusUpdate(context.id, "error"),
           },
         },
       },
-      // searchResources: {
-      //   invoke: {
-      //     src: "searchResourcesService",
-      //     onDone: {
-      //       target: "generateSubgoals",
-      //       actions: assign({ meta: (_, event) => event.data }),
-      //     },
-      //   },
-      // },
       generateSubgoals: {
         entry: (context) => {
-          context.statusUpdate?.call(
-            context.update,
-            context.id!,
-            "generateSubgoals"
-          );
+          context.statusUpdate(context.id, "generateSubgoals");
         },
         invoke: {
           src: "generateSubgoalsService",
           onDone: {
             actions: [
               assign({ children: (_, event) => event.data }),
-              (context) =>
-                context.statusUpdate?.call(context.update, context.id!, "done"),
+              (context) => context.statusUpdate(context.id, "done"),
             ],
             target: "done",
           },
           onError: {
             target: "done",
-            actions: (context) =>
-              context.statusUpdate?.call(context.update, context.id!, "error"),
+            actions: (context) => context.statusUpdate(context.id, "error"),
           },
         },
       },
@@ -185,7 +140,6 @@ export const goalMachine = createMachine<
           ", "
         )}.
         
-        Good luck with your journey in learning ${context.topic}!
         `;
 
         const enrichedMessage = await openaiChat(
@@ -196,9 +150,11 @@ export const goalMachine = createMachine<
           system_prompts.message_enrich
         );
 
-        context.update?.call(context.update, context.id!, {
-          context: enrichedMessage,
-        });
+        await patchTreeNodeContext(
+          context.journeyId,
+          context.path,
+          enrichedMessage
+        );
 
         return enrichedMessage;
       },
@@ -219,10 +175,6 @@ export const goalMachine = createMachine<
         );
 
         const score = scoreShema.parse(JSON.parse(scoreRaw));
-
-        context.update?.call(context.update, context.id!, {
-          score: score.goal,
-        });
         return score.goal;
       },
 
@@ -255,17 +207,37 @@ export const goalMachine = createMachine<
         );
 
         const { subgoals } = subgoalSchema.parse(JSON.parse(subgoalsRaw));
+        const subgoalFormatted = subgoals.map((subgoal) => {
+          const id = nanoid();
+          return {
+            keywords: subgoal.keywords,
+            obstacles: subgoal.obstacles,
+            path: `${context.path}.children.${id}`,
+            topic: subgoal.sub_goal,
+            description: subgoal.sub_goal_content,
+            importance: subgoal.importance as 0 | 1 | 2,
+            meta: {},
+            children: [],
+            id,
+            depth: context.depth + 1,
+          };
+        });
 
-        return subgoals.map((subgoal, index) => ({
-          ...subgoal,
-          topic: subgoal.sub_goal,
-          description: subgoal.sub_goal_content,
-          importance: subgoal.importance as 0 | 1 | 2,
-          meta: {},
-          children: [],
-          id: nanoid(),
-          depth: context.depth! + 1,
-        }));
+        await patchTreeNodeStatus(context.journeyId, context.path);
+
+        for await (const subgoal of subgoalFormatted) {
+          await saveTreeNode(context.journeyId, {
+            ...subgoal,
+            processed: false,
+            meta: {
+              context: null,
+              score: null,
+            },
+            children: {},
+          });
+        }
+
+        return subgoalFormatted;
       },
     },
   }
