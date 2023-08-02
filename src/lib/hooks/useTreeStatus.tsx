@@ -28,7 +28,6 @@ type Actions = {
 export const useTreeStatusStore = create(
   immer<State & Actions>((set) => ({
     goals: new Map(),
-    rootGoal: null,
 
     addGoal: (goal) =>
       set((state) => {

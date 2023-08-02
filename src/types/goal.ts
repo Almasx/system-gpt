@@ -28,6 +28,21 @@ export type PersistedGoal = (
 ) &
   Goal & { path: string; id: string; depth: number };
 
+export type ActionGoal = (
+  | {
+      prerequisites: string[];
+      effort: {
+        storyPoints: number;
+        estimatedDuration: number;
+      };
+      processed: true;
+    }
+  | { prerequisites: []; effort: {}; processed: false }
+) & {
+  id: string;
+  path: string;
+} & Goal;
+
 export type ProcessedGoal = {
   id: string;
   path: string;

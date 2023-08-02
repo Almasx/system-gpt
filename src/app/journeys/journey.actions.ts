@@ -17,8 +17,10 @@ export const create = zact(z.object({ userId: z.string() }))(
       title: "",
       description: "",
       stages: {
+        state: "goalConversation",
         goalConversation: [],
         goalTree: {},
+        actions: [],
       },
       userId,
       createdAt,

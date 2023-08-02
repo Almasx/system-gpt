@@ -1,8 +1,9 @@
 "use server";
 
-import { PersistedGoal, Score } from "~/types/goal";
+import { ActionGoal, PersistedGoal, Score } from "~/types/goal";
 
 import { redis } from "~/lib/services/redis";
+import { Stage } from "~/types/journey";
 import { OpenAIMessage } from "~/types/message";
 
 export const saveRootGoalMessage = async (
@@ -64,7 +65,16 @@ export const getRootNode = async (journeyId: string) => {
     );
     console.log(Object.keys(tree.children).length);
     if (Object.keys(tree.children).length > 0) {
-      return { state: "generating" as const, tree };
+      const state: Stage = await redis.json.get(
+        `journey:${journeyId}`,
+        "$.stages.state"
+      );
+
+      return {
+        state:
+          state !== "actions" ? ("generating" as const) : ("done" as const),
+        tree,
+      };
     }
 
     return { state: "root" as const, tree };
@@ -120,4 +130,13 @@ export const patchTreeNodeStatus = async (journeyId: string, path: string) => {
     `$.stages.goalTree.${path}.processed`,
     true
   );
+};
+
+export const saveActions = async (journeyId: string, actions: ActionGoal[]) => {
+  await redis.json.set(`journey:${journeyId}`, `$.stages.actions`, actions);
+  await redis.json.set(`journey:${journeyId}`, `$.stages.state`, "actions");
+};
+
+export const getActions = async (journeyId: string) => {
+  await redis.json.get(`journey:${journeyId}`, `$.stages.actions`);
 };

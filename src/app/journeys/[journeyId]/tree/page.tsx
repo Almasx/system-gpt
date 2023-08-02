@@ -14,11 +14,14 @@ import ReactFlow, {
 import { TreeMachineContext, treeMachine } from "~/lib/machines/treeMachine";
 
 import clsx from "clsx";
+import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback } from "react";
 import GoalNode from "~/components/goal-node";
+import { Modal } from "~/components/ui/modal";
 import { useDagreLayout } from "~/lib/hooks/useDagreLayout";
 
+const nodeTypes = { goal: GoalNode };
 export default function App(props: { params: { journeyId: string } }) {
   const { goalId } = useParams();
 
@@ -35,8 +38,6 @@ export default function App(props: { params: { journeyId: string } }) {
     </div>
   );
 }
-
-const nodeTypes = { goal: GoalNode };
 
 const GoalFlow = ({ journeyId }: { journeyId: string }) => {
   const { onLayout } = useDagreLayout();
@@ -86,16 +87,28 @@ const GoalFlow = ({ journeyId }: { journeyId: string }) => {
 export const Stop = () => {
   const treeRef = TreeMachineContext.useActorRef();
 
+  const savingActions = TreeMachineContext.useSelector((state) =>
+    state.matches("save")
+  );
+
   return (
-    <Panel position="top-left">
-      <button
-        className="px-4 py-1 bg-white border border-gray-light-secondary rounded-xl"
-        onClick={() => {
-          treeRef.send({ type: "INTERRUPT" });
-        }}
-      >
-        Stop
-      </button>
-    </Panel>
+    <>
+      <Panel position="top-left">
+        <button
+          className="px-4 py-1 bg-white border border-gray-light-secondary rounded-xl"
+          onClick={() => {
+            treeRef.send({ type: "INTERRUPT" });
+          }}
+        >
+          Stop
+        </button>
+      </Panel>
+
+      <Modal.Root visible={savingActions}>
+        <div className="flex items-center gap-4 px-8 py-6 bg-white border rounded-xl border-gray-light-secondary">
+          <Loader2 className="w-4 h-4 animate-spin " /> Saving Tree...
+        </div>
+      </Modal.Root>
+    </>
   );
 };

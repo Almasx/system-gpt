@@ -22,7 +22,7 @@ export const GoalScore = ({
   if (score) {
     <div className="flex gap-2 mb-8">
       <div className="p-1 text-xs uppercase bg-indigo-200 border border-indigo-500 rounded-md ">
-        priority: {score.priority}
+        significance: {score.significance}
       </div>
       <div className="p-1 text-xs uppercase bg-green-200 border border-green-500 rounded-md">
         relevance: {score.relevance}

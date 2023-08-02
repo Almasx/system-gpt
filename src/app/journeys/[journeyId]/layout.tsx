@@ -10,8 +10,9 @@ export default function RootLayout(props: {
     <div className="bg-light-secondary">
       <div className="grid h-20 place-items-center">
         <NavTabBar initialTab={`${path}/chat`}>
-          <LinkTab href={`${path}/chat`} label="Step 1: Define root goal" />
-          <LinkTab href={`${path}/tree`} label="Step 2: Create plan" />
+          <LinkTab href={`${path}/chat`} label="Define root goal" />
+          <LinkTab href={`${path}/tree`} label="Create plan" />
+          <LinkTab href={`${path}/actions`} label="Divide to chunks" />
         </NavTabBar>
       </div>
       {props.children}
