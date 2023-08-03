@@ -289,7 +289,7 @@ const Form = () => {
   );
 };
 
-export const Chat = () => {
+const Chat = () => {
   return (
     <>
       <div className="flex flex-col w-full mt-5 border-b border-x border-gray-light-secondary rounded-xl overflow-clip ">
@@ -303,7 +303,7 @@ export const Chat = () => {
   );
 };
 
-export const History = () => {
+const History = () => {
   const chatHistory = ChatMachineContext.useSelector(
     (state) => state.context.chatHistory
   );
@@ -340,7 +340,7 @@ const Error = () => {
   }
 };
 
-export const UserMessage = () => {
+const UserMessage = () => {
   const [message, setMessage] = useState("");
   const { send } = ChatMachineContext.useActorRef();
   const done = ChatMachineContext.useSelector((state) => state.done);
