@@ -3,10 +3,10 @@
 import Spline from "@splinetool/react-spline";
 import Image from "next/image";
 import Link from "next/link";
+import DisplayChunk from "public/display-chunk.png";
+import Gradient from "public/gradient.png";
+import DisplayTree from "public/tree.png";
 import { Calendar } from "~/components/calendar";
-import DisplayChunk from "../../public/display-chunk.png";
-import Gradient from "../../public/gradient.png";
-import DisplayTree from "../../public/tree.png";
 
 export default function App() {
   return (

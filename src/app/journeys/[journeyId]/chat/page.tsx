@@ -20,12 +20,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Prompt } from "next/font/google";
 import { z } from "zod";
 import { AutoAnimate } from "~/components/auto-animate";
-import { Chat } from "~/components/chat";
 import { ChatProvider } from "~/components/providers";
 import { Modal } from "~/components/ui/modal";
 import TextAreaField from "~/components/ui/text-area";
 import TextField from "~/components/ui/text-field";
 import { ChatMachineContext } from "~/lib/machines/chatMachine";
+import { Chat } from "../../../../components/chat";
 
 export default function SystemGeneratorWrapper(props: {
   params: { journeyId: string };

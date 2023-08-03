@@ -1,9 +1,9 @@
 import { auth } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
+import Line from "public/line.svg";
 import { Suspense } from "react";
 import { redis } from "~/lib/services/redis";
-import Line from "../../../public/line.svg";
 import { CreateJourney } from "./client-component";
 
 export default async function Journeys() {
