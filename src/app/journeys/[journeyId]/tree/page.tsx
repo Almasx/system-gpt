@@ -163,7 +163,7 @@ const GoalFlow = ({ journeyId }: { journeyId: string }) => {
   );
 };
 
-export const Stop = () => {
+const Stop = () => {
   const treeRef = TreeMachineContext.useActorRef();
 
   const savingActions = TreeMachineContext.useSelector((state) =>

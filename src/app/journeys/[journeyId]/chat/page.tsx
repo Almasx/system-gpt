@@ -51,7 +51,7 @@ interface State {
   steps: Step[];
 }
 
-export function SystemGenerator() {
+function SystemGenerator() {
   const [state, updateState] = useReducer<Reducer<State, Partial<State>>>(
     (prev, next) => {
       return { ...prev, ...next };

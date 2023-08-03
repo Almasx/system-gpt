@@ -54,7 +54,7 @@ export default async function Journeys() {
   );
 }
 
-export const GoalCard = async ({ journeyId }: { journeyId: string }) => {
+const GoalCard = async ({ journeyId }: { journeyId: string }) => {
   console.log(journeyId);
   const title = await redis.json.get(journeyId, "$.title");
   const description = await redis.json.get(journeyId, "$.description");

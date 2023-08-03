@@ -61,7 +61,7 @@ export default function App() {
 
                 <div className="flex flex-col gap-3 grow">
                   <p className="flex pt-1 ">
-                    Hello! I'm Dax, your startup AI genie. Get rolling by
+                    Hello! I am Dax, your startup AI genie. Get rolling by
                     generating a SMART goal.
                   </p>
                 </div>
