@@ -28,17 +28,21 @@ export type PersistedGoal = (
 ) &
   Goal & { path: string; id: string; depth: number };
 
-export type ActionGoal = (
-  | {
-      prerequisites: string[];
-      effort: {
-        storyPoints: number;
-        estimatedDuration: number;
-      };
-      processed: true;
-    }
-  | { prerequisites: []; effort: {}; processed: false }
-) & {
+export type ActionGoal =
+  | ({ prerequisites: []; effort: {}; processed: false } & {
+      id: string;
+      path: string;
+    } & Goal)
+  | ActionProcessedGoal;
+
+export type ActionProcessedGoal = {
+  prerequisites: string[];
+  effort: {
+    storyPoints: number;
+    estimatedDuration: number;
+  };
+  processed: true;
+} & {
   id: string;
   path: string;
 } & Goal;
@@ -97,4 +101,12 @@ export const rootGoalSchema = z.object({
   goal_importance: z.number(),
   goal_keywords: z.array(z.string()),
   goal_obstacles: z.array(z.string()),
+});
+
+export const estimateSchema = z.object({
+  prerequisites: z.array(z.string()),
+  effort: z.object({
+    storyPoints: z.number(),
+    estimatedDuration: z.number(),
+  }),
 });

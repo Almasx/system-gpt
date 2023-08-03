@@ -1,13 +1,20 @@
 "use client";
 
 import { ChevronRight, Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { Reducer, useCallback, useEffect, useReducer, useState } from "react";
 import {
   FormProvider,
   SubmitHandler,
   useForm,
   useFormContext,
 } from "react-hook-form";
+import Joyride, {
+  ACTIONS,
+  CallBackProps,
+  EVENTS,
+  STATUS,
+  Step,
+} from "react-joyride";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Prompt } from "next/font/google";
@@ -38,7 +45,59 @@ const promptSchema = z.object({
 
 type Prompt = z.infer<typeof promptSchema>;
 
+interface State {
+  run: boolean;
+  stepIndex: number;
+  steps: Step[];
+}
+
 export function SystemGenerator() {
+  const [state, updateState] = useReducer<Reducer<State, Partial<State>>>(
+    (prev, next) => {
+      return { ...prev, ...next };
+    },
+    {
+      run: false,
+      stepIndex: 0,
+      steps: [
+        {
+          content: <div>Chat here with Ai to increase quality</div>,
+          disableBeacon: true,
+          disableOverlayClose: true,
+          placement: "top",
+
+          target: "#chat",
+          title: "Generate root goal",
+        },
+        {
+          content: <div>Press here ONLY after talking enough with ai</div>,
+          disableBeacon: true,
+          disableOverlayClose: true,
+          placement: "bottom",
+
+          target: "#forward",
+          title: "Generate root goal",
+        },
+      ],
+    }
+  );
+
+  const handleJoyrideCallback = useCallback((data: CallBackProps) => {
+    const { action, index, status, type } = data;
+
+    if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
+      updateState({ run: false, stepIndex: 0 });
+    } else if (
+      ([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)
+    ) {
+      const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
+
+      updateState({
+        stepIndex: nextStepIndex,
+      });
+    }
+  }, []);
+
   const methods = useForm<Prompt>({
     resolver: zodResolver(promptSchema),
   });
@@ -46,6 +105,7 @@ export function SystemGenerator() {
   const idle = ChatMachineContext.useSelector((state) =>
     state.matches("chatFlow.idle")
   );
+
   const generatingGoal = ChatMachineContext.useSelector((state) =>
     state.matches("chatFlow.addingRootGoal")
   );
@@ -53,6 +113,17 @@ export function SystemGenerator() {
   const checkDB = ChatMachineContext.useSelector((state) =>
     state.matches("chatFlow.checkDB")
   );
+
+  const waitingForMessage = ChatMachineContext.useSelector((state) =>
+    state.matches("chatFlow.waitingForMessage")
+  );
+
+  useEffect(() => {
+    waitingForMessage &&
+      updateState({
+        run: true,
+      });
+  }, [waitingForMessage]);
 
   if (checkDB) {
     return (
@@ -81,6 +152,26 @@ export function SystemGenerator() {
           {(methods.formState.isSubmitted || !idle) && <Chat />}
         </div>
       </AutoAnimate>
+      <Joyride
+        callback={handleJoyrideCallback}
+        continuous
+        run={state.run}
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        stepIndex={state.stepIndex}
+        steps={state.steps}
+        styles={{
+          options: {
+            arrowColor: "#ffffff",
+            backgroundColor: "#ffffff",
+            overlayColor: "rgba(0, 0, 0, 0.4)",
+            primaryColor: "#000",
+            textColor: "#000",
+            zIndex: 1000,
+          },
+        }}
+      />
       <Modal.Root visible={generatingGoal}>
         <div className="flex items-center gap-4 px-8 py-6 bg-white border rounded-xl border-gray-light-secondary">
           <Loader2 className="w-4 h-4 animate-spin " /> Generating root goal..
@@ -139,6 +230,7 @@ const Form = () => {
         </div>
         <button
           type="button"
+          id="forward"
           onClick={() => {
             send({ type: "PERSIST_GOAL" });
           }}

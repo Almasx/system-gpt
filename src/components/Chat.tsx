@@ -60,7 +60,10 @@ export const UserMessage = () => {
   const done = ChatMachineContext.useSelector((state) => state.done);
   if (!done) {
     return (
-      <div className="p-4 pt-5 bg-light-secondary/60 fixed bottom-0 w-[1024px] left-1/2 -translate-x-1/2 backdrop-blur border border-gray-light-secondary rounded-xl overflow-clip">
+      <div
+        id="chat"
+        className="p-4 pt-5 bg-light-secondary/60 fixed bottom-0 w-[1024px] left-1/2 -translate-x-1/2 backdrop-blur border border-gray-light-secondary rounded-xl overflow-clip"
+      >
         <TextAreaField
           label="Chat"
           placeholder="Chat here with AI..."

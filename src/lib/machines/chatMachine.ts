@@ -186,6 +186,7 @@ export const chatMachine = createMachine<ChatContext, ChatEvents>({
               );
 
               await saveTreeNode(context.journeyId, goal);
+              context.user.onGoal();
             },
             onDone: {
               target: "done",

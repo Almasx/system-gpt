@@ -65,10 +65,10 @@ export const getRootNode = async (journeyId: string) => {
     );
     console.log(Object.keys(tree.children).length);
     if (Object.keys(tree.children).length > 0) {
-      const state: Stage = await redis.json.get(
-        `journey:${journeyId}`,
-        "$.stages.state"
-      );
+      const state: Stage = (
+        await redis.json.get(`journey:${journeyId}`, "$.stages.state")
+      )[0];
+      console.log("state", state);
 
       return {
         state:
@@ -133,10 +133,43 @@ export const patchTreeNodeStatus = async (journeyId: string, path: string) => {
 };
 
 export const saveActions = async (journeyId: string, actions: ActionGoal[]) => {
-  await redis.json.set(`journey:${journeyId}`, `$.stages.actions`, actions);
-  await redis.json.set(`journey:${journeyId}`, `$.stages.state`, "actions");
+  const pipeline = redis.pipeline();
+  for (const action of actions) {
+    pipeline.json.set(
+      `journey:${journeyId}`,
+      `$.stages.actions.${action.id}`,
+      action
+    );
+  }
+
+  pipeline.json.set(
+    `journey:${journeyId}`,
+    `$.stages.state`,
+    JSON.stringify("actions")
+  );
+
+  await pipeline.exec();
 };
 
 export const getActions = async (journeyId: string) => {
-  await redis.json.get(`journey:${journeyId}`, `$.stages.actions`);
+  const actionsMap = (
+    await redis.json.get(`journey:${journeyId}`, `$.stages.actions`)
+  )[0] as Record<string, ActionGoal>;
+
+  const actions: ActionGoal[] = [];
+
+  for (const action in actionsMap) {
+    actions.push(actionsMap[action]);
+  }
+  return actions;
+};
+
+export const patchAction = async (journeyId: string, action: ActionGoal) => {
+  if (action.processed) {
+    await redis.json.set(
+      `journey:${journeyId}`,
+      `$.stages.actions.${action.id}`,
+      action
+    );
+  }
 };

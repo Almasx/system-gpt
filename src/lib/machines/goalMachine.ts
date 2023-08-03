@@ -1,4 +1,12 @@
+import {
+  Score,
+  UnprocessedGoal,
+  scoreShema,
+  subgoalSchema,
+} from "~/types/goal";
 import { assign, createMachine } from "xstate";
+import { calculateChildren, nanoid } from "../utils";
+import { generate_subgoals, score_goal, system_prompts } from "../constants";
 import { openaiChat, openaiFunctions } from "~/app/api.actions";
 import {
   patchTreeNodeContext,
@@ -6,16 +14,8 @@ import {
   patchTreeNodeStatus,
   saveTreeNode,
 } from "~/app/journeys/[journeyId]/stages.actions";
-import {
-  Score,
-  UnprocessedGoal,
-  scoreShema,
-  subgoalSchema,
-} from "~/types/goal";
-import { generate_subgoals, score_goal, system_prompts } from "../constants";
-import { calculateChildren, nanoid } from "../utils";
 
-import { UpdateGoalStatus } from "../hooks/useTreeStatus";
+import { useTreeStatusStore } from "../hooks/useTreeStatus";
 
 export type GoalEvents = {
   type: "INPUT_GOAL";
@@ -26,7 +26,6 @@ export type GoalEvents = {
 };
 
 export type GoalContext = UnprocessedGoal & {
-  statusUpdate: UpdateGoalStatus;
   journeyId: string;
   rootDescription: string;
 };
@@ -40,7 +39,9 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
     states: {
       messageEnrich: {
         entry: (context) => {
-          context.statusUpdate(context.id, "messageEnrich");
+          useTreeStatusStore
+            .getState()
+            .updateGoalStatus(context.id, "messageEnrich");
         },
         invoke: {
           src: "messageEnrichService",
@@ -55,18 +56,20 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
           },
           onError: {
             target: "done",
-            actions: (context) =>
-              context.statusUpdate?.call(
-                context.statusUpdate,
-                context.id,
-                "error"
-              ),
+            actions: (context, event) => {
+              console.log(event.data);
+              useTreeStatusStore
+                .getState()
+                .updateGoalStatus(context.id, "error");
+            },
           },
         },
       },
       calculateScore: {
         entry: (context) => {
-          context.statusUpdate(context.id, "calculateScore");
+          useTreeStatusStore
+            .getState()
+            .updateGoalStatus(context.id, "calculateScore");
         },
         invoke: {
           src: "calculateScoreService",
@@ -90,26 +93,41 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
           },
           onError: {
             target: "done",
-            actions: (context) => context.statusUpdate(context.id, "error"),
+            actions: (context, event) => {
+              console.log(event.data);
+              useTreeStatusStore
+                .getState()
+                .updateGoalStatus(context.id, "error");
+            },
           },
         },
       },
       generateSubgoals: {
         entry: (context) => {
-          context.statusUpdate(context.id, "generateSubgoals");
+          useTreeStatusStore
+            .getState()
+            .updateGoalStatus(context.id, "generateSubgoals");
         },
         invoke: {
           src: "generateSubgoalsService",
           onDone: {
             actions: [
               assign({ children: (_, event) => event.data }),
-              (context) => context.statusUpdate(context.id, "done"),
+              (context) =>
+                useTreeStatusStore
+                  .getState()
+                  .updateGoalStatus(context.id, "done"),
             ],
             target: "done",
           },
           onError: {
             target: "done",
-            actions: (context) => context.statusUpdate(context.id, "error"),
+            actions: (context, event) => {
+              console.log(event.data);
+              useTreeStatusStore
+                .getState()
+                .updateGoalStatus(context.id, "error");
+            },
           },
         },
       },
@@ -126,23 +144,12 @@ export const goalMachine = createMachine<GoalContext, GoalEvents>(
     services: {
       messageEnrichService: async (context) => {
         const content = `Goal: ${context.topic}
-        Content: ${context.description}
         Importance: ${context.importance}
         Keywords: ${context.keywords?.join(", ")}
+        ${context.description}
         
-        Potential Hurdles:
-        ${context.obstacles
-          ?.map((hurdle, index) => `${index + 1}. ${hurdle}`)
-          .join("\n")}
 
-        Remember original goal was: """${context.rootDescription}"""
-        
-        Remember, the importance of this goal is "${
-          context.importance
-        }". This learning journey will expand your understanding of ${context.keywords?.join(
-          ", "
-        )}.
-        
+        Remember original goal was: """${context.rootDescription}""" 
         `;
 
         const enrichedMessage = await openaiChat(

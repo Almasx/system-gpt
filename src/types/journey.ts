@@ -1,4 +1,4 @@
-import { ProcessedGoal } from "./goal";
+import { ActionGoal, ProcessedGoal } from "./goal";
 
 export type Journey = {
   id: string;
@@ -7,7 +7,7 @@ export type Journey = {
     state: Stage;
     goalConversation: [];
     goalTree: ProcessedGoal | {};
-    actions: [];
+    actions: Record<string, ActionGoal>;
   };
   description: string;
   userId: string;

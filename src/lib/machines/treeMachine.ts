@@ -30,6 +30,7 @@ interface TreeContext {
     };
   };
   onGenerate: () => void;
+  onGoal: () => void;
   rootDescription: string | null;
 }
 
@@ -125,7 +126,6 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
         id: "goalMachine",
         src: goalMachine,
         data: (context): GoalContext => ({
-          statusUpdate: useTreeStatusStore.getState().updateGoalStatus,
           ...(context.currentGoal as UnprocessedGoal),
           journeyId: context.journeyId,
           rootDescription: context.rootDescription!,
@@ -213,6 +213,9 @@ export const treeMachine = createMachine<TreeContext, TreeEvent>({
         },
         onDone: {
           target: "done",
+          actions: (context) => {
+            context.onGoal();
+          },
         },
       },
     },

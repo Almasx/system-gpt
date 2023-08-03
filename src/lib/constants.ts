@@ -228,25 +228,13 @@ export const search_resources = {
   },
 };
 
-export const create_action = {
+export const estimate_goal = {
   type: "object",
-  name: "create_goal",
-  description: "generate a goal",
+  name: "estimate_goal",
+  description: "Estimate goal",
   parameters: {
     type: "object",
     properties: {
-      title: {
-        type: "string",
-        description: "Brief summary of the goal",
-      },
-      description: {
-        type: "string",
-        description: "Detailed explanation of the goal",
-      },
-      priority: {
-        type: "number",
-        description: "Priority level of the goal (1-10)",
-      },
       prerequisites: {
         type: "array",
         items: {
@@ -258,18 +246,10 @@ export const create_action = {
         type: "object",
         description: "Estimated effort to achieve the goal",
         properties: {
-          score: {
-            type: "number",
-            description: "Effort score from (1-10)",
-          },
           storyPoints: {
             type: "number",
             description:
               "Effort estimate using the Scrum methodology's story points",
-          },
-          complexity: {
-            type: "number",
-            description: "Estimate of the complexity of the task",
           },
           estimatedDuration: {
             type: "number",
@@ -277,10 +257,10 @@ export const create_action = {
               "Estimated time or effort to complete the goal in hours",
           },
         },
-        required: ["score", "storyPoints", "complexity", "estimatedDuration"],
+        required: ["storyPoints", "estimatedDuration"],
       },
     },
-    required: ["title", "priority", "description", "effort", "prerequisites"],
+    required: ["effort", "prerequisites"],
   },
 };
 
@@ -293,7 +273,7 @@ export const system_prompts = {
   },
   message_enrich: {
     message:
-      "The AI agent in this process is tasked with enriching a provided sub goal and its associated attributes into a more detailed context.  It will try to think about it more and brainstorm quality content and insights. The high-level purpose is to augment the user's understanding and planning around this sub goal, thereby facilitating more effective roadmap creation. The final output will be a more in-depth text.",
+      "The AI agent is tasked with enriching a provided sub goal into a more detailed content.  It will try to think about it more and brainstorm quality content and insights. The high-level purpose is to augment the user's understanding and planning around this sub goal, thereby facilitating more effective roadmap creation. Try thinking breakdown of topic with things consist of it.",
     model: "gpt-3.5-turbo",
     temperature: 1.3,
   },
@@ -327,11 +307,11 @@ export const system_prompts = {
     temperature: 1.4,
   },
 
-  create_action: {
+  estimate_goal: {
     message:
-      "AI, based on the user's needs and interests, create a new, specific, and achievable goal that adheres to the SMART goal method. This goal should serve as a structured target for the user's learning or project planning, facilitating the creation of a sequential, manageable task schedule.",
+      "You are a Goal Estimator AI. Your mission is to help users manage, prioritize, and achieve their goals. Help users break down their goals into manageable tasks, estimate the effort required, and schedule their work effectively. ",
     model: "gpt-3.5-turbo",
-    temperature: 1.3,
+    temperature: 0.6,
   },
 } as const;
 

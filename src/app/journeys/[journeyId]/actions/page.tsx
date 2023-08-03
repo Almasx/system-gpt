@@ -1,76 +1,31 @@
-"use client";
+import { Action, ActionFlow } from "./client-components";
 
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Controls,
-  MiniMap,
-} from "reactflow";
-import {
-  ActionMachineContext,
-  actionMachine,
-} from "~/lib/machines/actionsMachine";
+import { ActionGoal } from "~/types/goal";
+import { getActions } from "../stages.actions";
 
-import clsx from "clsx";
-import GoalNode from "~/components/goal-node";
-
-const nodeTypes = { goal: GoalNode };
-
-export default async function ActionPage({
-  params,
-}: {
+export default async function ActionPage(props: {
   params: { journeyId: string };
 }) {
+  const actions = await getActions(props.params.journeyId);
+  console.log("actions.filter((action) => !action.processed)");
+
   return (
-    <ActionMachineContext.Provider
-      machine={actionMachine.withContext({
-        journeyId: params.journeyId,
-        goals: [],
-      })}
-    >
-      <Actions />
-      <div
-        className={clsx(
-          "relative duration-300 rounded-xl rounded-t border border-gray-light-secondary h-[calc(100vh-80px)]",
-          " w-[calc(100vw-384px)]  rounded-l"
-        )}
-      >
-        <ReactFlow
-          fitView
-          nodeTypes={nodeTypes}
-          snapToGrid={true}
-          minZoom={0.2}
-          proOptions={{ hideAttribution: true }}
-          defaultEdges={[]}
-          defaultNodes={[]}
-        >
-          <Controls />
-          <MiniMap />
-          <Background
-            variant={"lines" as BackgroundVariant}
-            gap={12}
-            size={1}
-          />
-        </ReactFlow>
-      </div>
-    </ActionMachineContext.Provider>
+    <div className="relative h-[calc(100vh-80px)]">
+      <Actions actions={actions} />
+
+      <ActionFlow
+        actions={actions.filter((action) => !action.processed)}
+        journeyId={props.params.journeyId}
+      />
+    </div>
   );
 }
 
-const Actions = () => {
-  const actions = ActionMachineContext.useSelector(
-    (state) => state.context.goals
-  );
-
+const Actions = ({ actions }: { actions: ActionGoal[] }) => {
   return (
-    <div className="flex flex-col gap-3 px-5 pt-5">
+    <div className="fixed flex flex-col w-96 gap-3 px-5 pt-5 overflow-y-auto h-[calc(100vh-80px)] hide-scroll">
       {actions.map((action) => (
-        <div
-          className="px-3 py-2 bg-white border rounded-xl w-80 border-gray-light-secondary"
-          key={action.id}
-        >
-          {action.topic}
-        </div>
+        <Action action={action} key={action.id} />
       ))}
     </div>
   );
