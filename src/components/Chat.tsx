@@ -105,22 +105,3 @@ const Loading = () => {
     );
   }
 };
-
-// const Complete = () => {
-//   const done = ChatMachineContext.useSelector((state) => state.done);
-
-//   if (done) {
-//     return (
-//       <p className="flex pt-1 text-base break-all">
-//         Your schedule is completed 🚀 Checkout: your{" "}
-//         <a
-//           href="https://calendar.google.com/calendar/"
-//           className="text-blue-500"
-//         >
-//           {" "}
-//           Calendar
-//         </a>
-//       </p>
-//     );
-//   }
-// };
