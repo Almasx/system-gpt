@@ -3,7 +3,7 @@ import { ChatMachineContext } from "~/lib/machines/chatMachine";
 import { Message } from "./message";
 import TextAreaField from "./ui/text-area";
 
-const Chat = () => {
+export const Chat = () => {
   return (
     <>
       <div className="flex flex-col w-full mt-5 border-b border-x border-gray-light-secondary rounded-xl overflow-clip ">
@@ -124,5 +124,3 @@ const Loading = () => {
 //     );
 //   }
 // };
-
-export default Chat;
