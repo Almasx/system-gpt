@@ -1,16 +1,11 @@
-import {
-  ActionGoal,
-  ActionProcessedGoal,
-  ProcessedGoal,
-  estimateSchema,
-} from "~/types/goal";
 import { Edge, Instance, Node } from "reactflow";
 import { assign, createMachine } from "xstate";
-import { estimate_goal, system_prompts } from "../constants";
 import {
   getActions,
   patchAction,
 } from "~/app/journeys/[journeyId]/stages.actions";
+import { ActionGoal, ActionProcessedGoal, estimateSchema } from "~/types/goal";
+import { estimate_goal, system_prompts } from "../constants";
 
 import { createActorContext } from "@xstate/react";
 import { openaiFunctions } from "~/app/api.actions";
@@ -30,11 +25,7 @@ interface ActionContext {
   };
 }
 
-type ActionEvent =
-  | { type: "SUBGOALS_GENERATED"; goal: ProcessedGoal }
-  | { type: "INTERRUPT" };
-
-export const actionMachine = createMachine<ActionContext, ActionEvent>({
+export const actionMachine = createMachine<ActionContext>({
   predictableActionArguments: true,
   initial: "checkStack",
   states: {
@@ -47,7 +38,8 @@ export const actionMachine = createMachine<ActionContext, ActionEvent>({
         {
           target: "processGoal",
           actions: assign((context) => ({
-            currentAction: context.goals.shift(), // pop the goal from stack
+            currentAction: context.goals[0],
+            goals: context.goals.slice(1),
           })),
         },
       ],
@@ -115,7 +107,7 @@ export const actionMachine = createMachine<ActionContext, ActionEvent>({
 
             const nodes: Node[] = [];
             const edges: Edge[] = [];
-            let xPos = 100; // initial x position
+            let xPos = 100;
             let yPos = 100;
 
             chunks.forEach((chunk, index) => {

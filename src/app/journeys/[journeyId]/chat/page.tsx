@@ -119,11 +119,10 @@ function SystemGenerator() {
   );
 
   useEffect(() => {
-    waitingForMessage &&
-      updateState({
-        run: true,
-      });
-  }, [waitingForMessage]);
+    updateState({
+      run: true,
+    });
+  }, [idle]);
 
   if (checkDB) {
     return (

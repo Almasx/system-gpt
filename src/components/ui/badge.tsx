@@ -1,6 +1,5 @@
 "use client";
 
-import clsx from "clsx";
 import type { ReactNode } from "react";
 
 interface BadgeProps {
@@ -14,7 +13,7 @@ const Badge = ({ children, active, onClick, className = "" }: BadgeProps) => {
   return (
     <button
       type="button"
-      className={clsx(
+      className={cn(
         className,
         "rounded-xl border px-3 py-1 outline-none duration-150 ease-in-out hover:bg-dark hover:text-light",
         "bg-light/60 backdrop-blur-sm text-sm",
