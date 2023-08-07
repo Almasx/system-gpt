@@ -114,10 +114,6 @@ function SystemGenerator() {
     state.matches("chatFlow.checkDB")
   );
 
-  const waitingForMessage = ChatMachineContext.useSelector((state) =>
-    state.matches("chatFlow.waitingForMessage")
-  );
-
   useEffect(() => {
     updateState({
       run: true,

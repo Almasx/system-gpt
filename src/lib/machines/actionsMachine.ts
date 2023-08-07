@@ -97,7 +97,11 @@ export const actionMachine = createMachine<ActionContext>({
         src: async (context) => {
           const actions = await getActions(context.journeyId);
 
-          return allocateToChunks(actions as ActionProcessedGoal[]);
+          return allocateToChunks(
+            actions.filter(
+              (action) => action.processed
+            ) as ActionProcessedGoal[]
+          );
         },
         onDone: {
           target: "done",
@@ -131,6 +135,7 @@ export const actionMachine = createMachine<ActionContext>({
                   label: `Chunk ${index + 1}`,
                   width: chunkWidth,
                   height: chunkHeight,
+                  children: chunk,
                 },
                 position: { x: xPos, y: yPos },
                 type: "chunk",

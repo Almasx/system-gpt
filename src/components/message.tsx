@@ -12,9 +12,10 @@ export type MessageProps = {
   id: string;
   message: React.ReactNode;
   error?: string;
+  className?: string;
 };
 
-export function Wrapper({ message, type, error }: MessageProps) {
+export function Wrapper({ message, type, error, className }: MessageProps) {
   const { user } = useUser();
 
   if (error) {
@@ -36,7 +37,8 @@ export function Wrapper({ message, type, error }: MessageProps) {
     <div
       className={clsx(
         "px-3 py-5 flex flex-row gap-3 items-start border-t border-gray-light-secondary w-full overflow-clip",
-        type === "user" && "bg-light-secondary"
+        type === "user" && "bg-light-secondary",
+        className
       )}
     >
       {type === "user" && user?.imageUrl ? (

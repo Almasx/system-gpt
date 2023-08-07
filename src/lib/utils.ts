@@ -8,45 +8,12 @@ import {
 } from "./constants";
 
 import { customAlphabet } from "nanoid";
-import { convertWorkBlocksUI } from "~/components/calendar";
 import { WorkBlock } from "~/types/work-block";
 
 export const nanoid = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
   7
 );
-
-// mock
-
-export const generateData = () => {
-  const workBlocks: WorkBlock[] = [];
-  const startTime = [8, 0];
-  const endTime = [10, 0];
-
-  for (let i = 0; i < 30; i++) {
-    for (let j = 0; j < 3; j++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      workBlocks.push({
-        summary: `Event ${j + 1}`,
-        description: `This is event ${j + 1}`,
-        dayOfWeek: date.getDay(),
-        start: `${startTime[0]}:${startTime[1]}`,
-        end: `${endTime[0]}:${endTime[1]}`,
-      });
-      startTime[0] += 3;
-      endTime[0] += 3;
-    }
-    startTime[0] = 8;
-    endTime[0] = 10;
-  }
-
-  return workBlocks;
-};
-
-export const generateUIData = () => {
-  return convertWorkBlocksUI(generateData());
-};
 
 // date
 
@@ -111,6 +78,42 @@ export function convertEventsUI(workBlocks: WorkBlock[]): { days: Day[] } {
     days,
   };
 }
+
+const foldLine = (input: string) => {
+  return input.replace(/(.{75})/g, "$1\r\n ");
+};
+
+const generateEvent = (event: WorkBlock) => {
+  const startDate = getWorkBlockDate(event.dayOfWeek, event.start);
+  const endDate = getWorkBlockDate(event.dayOfWeek, event.end);
+
+  return foldLine(
+    `BEGIN:VEVENT\r\nUID:${startDate.getTime()}@yourproduct.com\r\n` +
+      `DTSTAMP:${
+        startDate.toISOString().replace(/[-:]/g, "").split(".")[0]
+      }Z\r\n` +
+      `DTSTART:${
+        startDate.toISOString().replace(/[-:]/g, "").split(".")[0]
+      }Z\r\n` +
+      `DTEND:${endDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z\r\n` +
+      `SUMMARY:${event.summary}\r\nDESCRIPTION:${event.description}\r\nEND:VEVENT`
+  );
+};
+
+export const downloadICS = (events: WorkBlock[]) => {
+  const icsEvents = events.map(generateEvent).join("\r\n");
+  const icsContent =
+    `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Your Product//EN\r\n` +
+    `${icsEvents}\r\nEND:VCALENDAR`;
+
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "events.ics";
+  a.click();
+};
+
 interface Position {
   x: number;
   y: number;

@@ -1,15 +1,23 @@
+import { memo, useState } from "react";
 import { Handle, NodeProps, Position } from "reactflow";
 import {
   ServiceStatus,
   selectGoalStatus,
   useTreeStatusStore,
 } from "~/lib/hooks/useTreeStatus";
+import {
+  CalendarMachineContext,
+  calendarMachine,
+} from "~/lib/machines/calendarMachine";
 
-import Link from "next/link";
-import { Loader2 } from "lucide-react";
 import clsx from "clsx";
-import { memo } from "react";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { coach_message } from "~/lib/constants";
+import { ActionProcessedGoal } from "~/types/goal";
+import { AddCalendar } from "./templates/add-calendar";
+import { Modal } from "./ui/modal";
 
 const statusMap: Record<
   Extract<
@@ -133,25 +141,69 @@ type ChunkNodeData = {
   label: string;
   width: number;
   height: number;
+  children: ActionProcessedGoal[];
 };
 
 export const ChunkNode = memo(
   ({
-    data: { label, width, height }, //keywords, description, importance
+    data: { label, width, height, children }, //keywords, description, importance
     id,
   }: NodeProps<ChunkNodeData>) => {
+    const [show, setShow] = useState(false);
     return (
-      <div
-        className={`relative border border-blue-500 border-dashed rounded-xl `}
-        style={{ width: width + "px", height: height + "px" }}
-      >
-        <div className="top-0 text-blue-900 uppercase -translate-y-6">
-          {label}
+      <>
+        <div
+          className={`relative border border-blue-500 border-dashed rounded-xl bg-blue-200/20`}
+          style={{ width: width + "px", height: height + "px" }}
+        >
+          <div className="top-0 text-blue-900 uppercase -translate-y-6">
+            {label}
+          </div>
+          <button
+            onClick={() => setShow(true)}
+            className="absolute flex items-center gap-1 px-1 py-0.5 text-xs font-medium text-white translate-y-full bg-blue-500 rounded-md -bottom-3"
+          >
+            Generate Calendar
+          </button>
         </div>
-      </div>
+        <Modal.Root visible={show} setVisible={setShow}>
+          <CalendarMachineContext.Provider
+            machine={calendarMachine.withContext({
+              calendar: null,
+              chatHistory: [
+                { role: "system", content: coach_message },
+                { role: "user", content: createPrompt(children) },
+              ],
+              errorMessage: null,
+            })}
+          >
+            <AddCalendar />
+          </CalendarMachineContext.Provider>
+        </Modal.Root>
+      </>
     );
   }
 );
+
+const createPrompt = (actionGoals: ActionProcessedGoal[]): string => {
+  let prompt = "Here are the details of the action goals:\n";
+
+  actionGoals.forEach((goal, index) => {
+    prompt += `Goal ${index + 1}:\n`;
+    prompt += `  Topic: ${goal.topic}\n`;
+    prompt += `  Description: ${goal.description}\n`;
+    prompt += `  Importance: ${goal.importance}\n`;
+    prompt += `  Prerequisites: ${goal.prerequisites.join(", ")}\n`;
+    prompt += `  Effort: ${goal.effort.storyPoints} story points, ${goal.effort.estimatedDuration} estimated duration\n`;
+    prompt += `  Keywords: ${goal.keywords.join(", ")}\n`;
+    prompt += `  Obstacles: ${goal.obstacles.join(", ")}\n`;
+    prompt += `  Processed: ${goal.processed}\n`;
+    prompt += `  ID: ${goal.id}\n`;
+    prompt += `  Path: ${goal.path}\n\n`;
+  });
+
+  return prompt;
+};
 
 ChunkNode.displayName = "ChunkNode";
 
