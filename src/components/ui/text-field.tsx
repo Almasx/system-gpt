@@ -60,7 +60,7 @@ const TextField = forwardRef<
           }}
           placeholder={placeholder}
           className={clsx(
-            " border-gray-light-secondary bg-light ",
+            "border-gray-light-secondary bg-light ",
             "peer ease w-full rounded-2xl border px-5 py-3 text-sm focus:outline-none",
             "text-dark  placeholder:text-dark/30 ",
             error && "border-red-500 bg-red-500/10",
